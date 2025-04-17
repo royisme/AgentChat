@@ -1,0 +1,74 @@
+### Create a new session for a user in the income tax agent
+POST http://localhost:8000/apps/income_tax_agent/users/user_123/sessions/s_123
+Content-Type: application/json
+
+{
+    "state":{
+        "key1":"value1",
+        "key2":42
+    }
+}
+
+### Get user's sessions list
+GET http://localhost:8000/apps/income_tax_agent/users/user_123/sessions
+Content-Type: application/json
+
+{
+    "app_name":"income_tax_agent",
+    "user_id":"user_123"
+}
+
+### Delete a session for a user in the income tax agent
+DELETE http://localhost:8000/apps/income_tax_agent/users/user_123/sessions/s_123
+Content-Type: application/json
+
+{
+    "app_name":"income_tax_agent",
+    "user_id":"user_123",
+    "session_id":"s_123"
+}
+
+### Send a query to the session
+POST http://localhost:8000/run
+Content-Type: application/json
+
+{
+    "app_name":"income_tax_agent",
+    "user_id":"user_123",
+    "session_id":"s_123",
+    "new_message":{
+        "role":"user",
+        "parts":[{
+            "text": "How do I file my taxes?"
+        }]
+    }
+}
+
+### Send a Server-Sent-Event (SSE) to the session
+POST http://localhost:8000/run_sse
+Content-Type: application/json
+
+{
+    "app_name":"income_tax_agent",
+    "user_id":"user_123",
+    "session_id":"s_123",
+    "new_message":{
+        "role":"user",
+        "parts":[{
+            "text": "How do I file my taxes?"
+        }]
+    },
+    "streaming": true
+}
+
+
+
+### Get user's sessions list
+GET http://localhost:8000/apps/income_tax_agent/users/user_123/sessions
+Content-Type: application/json
+
+{
+    "app_name":"income_tax_agent",
+    "user_id":"user_123"
+}
+
