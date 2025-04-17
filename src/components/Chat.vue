@@ -1,17 +1,45 @@
 <template>
-  <h1>Agent Chat</h1>
-  <div ref="messagesDiv" style="height: 300px; overflow-y: auto; border: 1px solid black" />
-  <form @submit.prevent="handleSubmit">
-    <label for="message">Message:</label>
-    <input
-      id="message"
-      ref="messageInput"
-      v-model="currentMessage"
-      name="message"
-      type="text"
-    >
-    <button type="submit">Send</button>
-  </form>
+  <v-container>
+    <v-card class="mx-auto" elevation="2" max-width="800">
+      <v-card-title class="d-flex align-center">
+        <v-icon class="mr-2">mdi-chat</v-icon>
+        Agent Chat
+      </v-card-title>
+
+      <v-card-text>
+        <div
+          ref="messagesDiv"
+          class="chat-messages"
+        >
+          <!-- Messages will be added here dynamically -->
+        </div>
+      </v-card-text>
+
+      <v-card-actions>
+        <v-form class="d-flex w-100" @submit.prevent="handleSubmit">
+          <v-text-field
+            ref="messageInput"
+            v-model="currentMessage"
+            append-inner-icon="mdi-send"
+            class="mr-2"
+            density="comfortable"
+            hide-details
+            label="Message"
+            variant="outlined"
+            @click:append-inner="handleSubmit"
+          />
+
+          <v-btn
+            color="primary"
+            :disabled="!currentMessage.trim()"
+            type="submit"
+          >
+            Send
+          </v-btn>
+        </v-form>
+      </v-card-actions>
+    </v-card>
+  </v-container>
 </template>
 
 <script lang="ts" setup>
@@ -116,12 +144,39 @@
     }
   };
 
-  // Add a message to the messages div
+  // Add a message to the messages div with Vuetify styling
   const addMessageToDiv = (sender: string, message: string) => {
     if (messagesDiv.value) {
       const messageElement = document.createElement('div');
-      messageElement.className = 'message';
-      messageElement.innerHTML = `<strong>${sender}:</strong> ${message}`;
+      messageElement.className = 'message ' + (sender === 'You' ? 'user-message' : 'agent-message');
+
+      // Create message container with Vuetify-like styling
+      const messageContainer = document.createElement('div');
+      messageContainer.className = 'd-flex message-container';
+
+      // Create avatar
+      const avatar = document.createElement('div');
+      avatar.className = 'message-avatar mr-3';
+      avatar.innerHTML = `
+        <div class="v-avatar" style="background-color: ${sender === 'You' ? '#1976d2' : '#4caf50'}; color: white; height: 36px; width: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
+          <span>${sender.charAt(0)}</span>
+        </div>
+      `;
+
+      // Create content with inline styles to ensure color is applied
+      const content = document.createElement('div');
+      content.className = 'message-content';
+      content.style.color = 'black'; // Apply color directly with inline style
+      content.innerHTML = `
+        <div class="text-subtitle-2 font-weight-medium" style="color: black;">${sender}</div>
+        <div class="message-text" style="color: black;">${message}</div>
+      `;
+
+      // Assemble the message
+      messageContainer.appendChild(avatar);
+      messageContainer.appendChild(content);
+      messageElement.appendChild(messageContainer);
+
       messagesDiv.value.appendChild(messageElement);
       messagesDiv.value.scrollTop = messagesDiv.value.scrollHeight;
     }
@@ -177,21 +232,60 @@
       await createSession();
       console.log('Chat session initialized');
 
+      // Add a welcome message
+      addMessageToDiv('IncomeTaxAgent', 'Welcome to the Income Tax Agent! How can I help you today?');
+
       // Focus the input field when the component is mounted
       if (messageInput.value) {
         messageInput.value.focus();
       }
     } catch (error) {
       console.error('Failed to initialize chat session:', error);
+      addMessageToDiv('System', 'Failed to initialize chat session. Please try again.');
     }
   });
 </script>
 
 <style scoped>
-.message {
-  padding: 8px;
-  margin: 4px;
-  border-radius: 4px;
+.chat-messages {
+  height: 400px;
+  overflow-y: auto;
+  padding: 16px;
   background-color: #f5f5f5;
+  border-radius: 8px;
+}
+
+.message {
+  margin-bottom: 16px;
+}
+
+.message-container {
+  display: flex;
+  align-items: flex-start;
+}
+
+.message-content {
+  padding: 8px 12px;
+  border-radius: 8px;
+  max-width: 80%;
+  color: black !important; /* Added !important to override any other styles */
+}
+
+.user-message .message-content {
+  background-color: #e3f2fd;
+}
+
+.agent-message .message-content {
+  background-color: #e8f5e9;
+}
+
+.message-text {
+  white-space: pre-wrap;
+  color: black !important; /* Added !important to ensure text color */
+}
+
+/* Add a more specific selector to ensure color is applied */
+.message-content div {
+  color: black !important;
 }
 </style>
