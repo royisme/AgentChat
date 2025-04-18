@@ -47,8 +47,7 @@
   import { marked } from 'marked'; // Import the markdown parser
 
   // API base URL from environment variables with fallback
-  const apiBaseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8080';
-  console.log('API Base URL:', apiBaseUrl);
+  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
   // References
   const messagesDiv = ref<HTMLDivElement | null>(null);
@@ -95,6 +94,13 @@
         }
       );
 
+      if(response.status === 400){
+        const data = await response.json();
+        if (data.detail && data.detail.includes('Session already exists')) {
+          console.log('Session already exists:', data.detail);
+          return data;
+        }
+      }
       if (!response.ok) {
         throw new Error(`Failed to create session: ${response.status}`);
       }
@@ -153,9 +159,6 @@
       marked.setOptions({
         breaks: true, // Add line breaks
         gfm: true, // GitHub Flavored Markdown
-        headerIds: false, // Disable header IDs to prevent XSS
-        mangle: false, // Don't mangle email addresses
-        sanitize: false, // We'll use DOMPurify for sanitization
       });
 
       // Return parsed markdown - use marked.parse() with the sync option

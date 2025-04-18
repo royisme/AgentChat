@@ -3,7 +3,6 @@
 
 ### get all apps
 GET http://{{host}}/list-apps
-Authorization: Bearer {{access_token}}
 
 ### Create a new session for a user in the income tax agent
 POST http://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
