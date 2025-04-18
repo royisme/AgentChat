@@ -2,11 +2,11 @@
 @access_token={{$dotenv TEST_ACCESS_TOKEN}}
 
 ### get all apps
-GET http://{{host}}/list-apps
+GET https://{{host}}/list-apps
 Authorization: Bearer {{access_token}}
 
 ### Create a new session for a user in the income tax agent
-POST http://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
+POST https://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -18,7 +18,7 @@ Authorization: Bearer {{access_token}}
 }
 
 ### Get user's sessions list
-GET http://{{host}}/apps/income_tax_agent/users/user_123/sessions
+GET https://{{host}}/apps/income_tax_agent/users/user_123/sessions
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -28,7 +28,7 @@ Authorization: Bearer {{access_token}}
 }
 
 ### Delete a session for a user in the income tax agent
-DELETE http://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
+DELETE https://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -39,7 +39,7 @@ Authorization: Bearer {{access_token}}
 }
 
 ### Send a query to the session
-POST http://{{host}}/run
+POST https://{{host}}/run
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -56,7 +56,7 @@ Authorization: Bearer {{access_token}}
 }
 
 ### Send a Server-Sent-Event (SSE) to the session
-POST http://{{host}}/run_sse
+POST https://{{host}}/run_sse
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -76,7 +76,7 @@ Authorization: Bearer {{access_token}}
 
 
 ### Get user's sessions list
-GET http://{{host}}/apps/income_tax_agent/users/user_123/sessions
+GET https://{{host}}/apps/income_tax_agent/users/user_123/sessions
 Content-Type: application/json
 
 {

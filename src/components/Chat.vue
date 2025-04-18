@@ -44,9 +44,11 @@
 
 <script lang="ts" setup>
   import { onMounted, ref } from 'vue';
+  import { marked } from 'marked'; // Import the markdown parser
 
   // API base URL from environment variables with fallback
-  const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const apiBaseUrl = import.meta.env.VITE_SERVER_URL || 'http://localhost:8080';
+  console.log('API Base URL:', apiBaseUrl);
 
   // References
   const messagesDiv = ref<HTMLDivElement | null>(null);
@@ -144,7 +146,27 @@
     }
   };
 
-  // Add a message to the messages div with Vuetify styling
+  // Parse markdown text to HTML
+  const parseMarkdown = (text: string): string => {
+    try {
+      // Configure marked for safe rendering
+      marked.setOptions({
+        breaks: true, // Add line breaks
+        gfm: true, // GitHub Flavored Markdown
+        headerIds: false, // Disable header IDs to prevent XSS
+        mangle: false, // Don't mangle email addresses
+        sanitize: false, // We'll use DOMPurify for sanitization
+      });
+
+      // Return parsed markdown - use marked.parse() with the sync option
+      return marked.parse(text, { async: false }) as string;
+    } catch (error) {
+      console.error('Error parsing markdown:', error);
+      return text; // Return original text if parsing fails
+    }
+  };
+
+  // Add a message to the messages div with Vuetify styling and markdown support
   const addMessageToDiv = (sender: string, message: string) => {
     if (messagesDiv.value) {
       const messageElement = document.createElement('div');
@@ -163,13 +185,16 @@
         </div>
       `;
 
+      // Parse markdown for agent messages, but not for user messages
+      const messageHtml = sender !== 'You' ? parseMarkdown(message) : message;
+
       // Create content with inline styles to ensure color is applied
       const content = document.createElement('div');
       content.className = 'message-content';
       content.style.color = 'black'; // Apply color directly with inline style
       content.innerHTML = `
         <div class="text-subtitle-2 font-weight-medium" style="color: black;">${sender}</div>
-        <div class="message-text" style="color: black;">${message}</div>
+        <div class="message-text" style="color: black;">${messageHtml}</div>
       `;
 
       // Assemble the message
@@ -179,6 +204,12 @@
 
       messagesDiv.value.appendChild(messageElement);
       messagesDiv.value.scrollTop = messagesDiv.value.scrollHeight;
+
+      // Add syntax highlighting to code blocks if any
+      if (sender !== 'You' && messageElement.querySelectorAll('pre code').length > 0) {
+        // You could add a library like highlight.js here to enhance code blocks
+        // For example: hljs.highlightAll();
+      }
     }
   };
 
@@ -268,7 +299,7 @@
   padding: 8px 12px;
   border-radius: 8px;
   max-width: 80%;
-  color: black !important; /* Added !important to override any other styles */
+  color: black !important;
 }
 
 .user-message .message-content {
@@ -281,11 +312,81 @@
 
 .message-text {
   white-space: pre-wrap;
-  color: black !important; /* Added !important to ensure text color */
+  color: black !important;
 }
 
-/* Add a more specific selector to ensure color is applied */
 .message-content div {
   color: black !important;
+}
+
+/* Markdown styling */
+.message-text h1,
+.message-text h2,
+.message-text h3,
+.message-text h4,
+.message-text h5,
+.message-text h6 {
+  color: black !important;
+  margin-top: 10px;
+  margin-bottom: 5px;
+}
+
+.message-text p {
+  margin-bottom: 8px;
+}
+
+.message-text ul,
+.message-text ol {
+  padding-left: 20px;
+  margin-bottom: 8px;
+}
+
+.message-text code {
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+.message-text pre {
+  background-color: rgba(0, 0, 0, 0.06);
+  padding: 8px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 8px;
+}
+
+.message-text pre code {
+  background-color: transparent;
+  padding: 0;
+}
+
+.message-text a {
+  color: #1976d2 !important;
+  text-decoration: none;
+}
+
+.message-text a:hover {
+  text-decoration: underline;
+}
+
+.message-text table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.message-text th,
+.message-text td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.message-text blockquote {
+  border-left: 4px solid #ddd;
+  padding-left: 10px;
+  margin-left: 0;
+  color: #666;
 }
 </style>
