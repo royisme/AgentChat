@@ -48,6 +48,7 @@
 
   // API base URL from environment variables with fallback
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+  const access_token = import.meta.env.VITE_ACCESS_TOKEN
 
   // References
   const messagesDiv = ref<HTMLDivElement | null>(null);
@@ -85,6 +86,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`,
           },
           body: JSON.stringify({
             state: {
@@ -125,6 +127,7 @@
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Authorization': `Bearer ${access_token}`,
           },
           body: JSON.stringify({
             app_name: appName.value,
@@ -143,7 +146,6 @@
       }
 
       const data = await response.json() as ChatResponse[];
-      console.log('Query response:', data);
 
       return data;
     } catch (error) {
