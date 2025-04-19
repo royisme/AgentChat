@@ -2,16 +2,38 @@
 
 This is a WebSocket-based application, which communicates with an AI Agent server to help achieve customized AI interaction.
 
+## 📦 Getting Started
+
+### Environment Setup
+
+Backend server API URL address
+
+```
+VITE_API_URL=http://localhost:8080
+```
+
+Backend server API access token
+
+```
+VITE_ACCESS_TOKEN=xxx
+```
+
+Rest API URL address, used for docs `api.rest`, put `.env` fine in `docs` folder
+
+```
+TEST_HOST=localhost:8000
+```
+
 ## 💿 Install
 
 Set up your project using your preferred package manager. Use the corresponding command to install the dependencies:
 
-| Package Manager                                                | Command        |
-|---------------------------------------------------------------|----------------|
-| [yarn](https://yarnpkg.com/getting-started)                   | `yarn install` |
-| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install)     | `npm install`  |
-| [pnpm](https://pnpm.io/installation)                          | `pnpm install` |
-| [bun](https://bun.sh/#getting-started)                        | `bun install`  |
+| Package Manager                                           | Command        |
+| --------------------------------------------------------- | -------------- |
+| [yarn](https://yarnpkg.com/getting-started)               | `yarn install` |
+| [npm](https://docs.npmjs.com/cli/v7/commands/npm-install) | `npm install`  |
+| [pnpm](https://pnpm.io/installation)                      | `pnpm install` |
+| [bun](https://bun.sh/#getting-started)                    | `bun install`  |
 
 After completing the installation, your environment is ready for development.
 
