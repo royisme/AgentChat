@@ -2,401 +2,641 @@
   <v-container>
     <v-card class="mx-auto" elevation="2" max-width="800">
       <v-card-title class="d-flex align-center">
-        <v-icon class="mr-2">mdi-chat</v-icon>
-        Agent Chat
+        <v-icon class="mr-2" color="primary">mdi-chat</v-icon>
+        Agent Chat (Hybrid: Fetch Text + WS Audio)
       </v-card-title>
 
       <v-card-text>
-        <div
-          ref="messagesDiv"
-          class="chat-messages"
+        <v-alert
+          v-if="fetchError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="error"
+          variant="tonal"
         >
-          <!-- Messages will be added here dynamically -->
-        </div>
-      </v-card-text>
+          Error: {{ fetchError }}
+        </v-alert>
+        <v-alert
+          v-if="wsError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="error"
+          variant="tonal"
+        >
+          Audio Connection Error: {{ wsError }}
+        </v-alert>
+        <v-alert
+          v-if="recorderError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="warning"
+          variant="tonal"
+        >
+          Recorder Error: {{ recorderError }}
+        </v-alert>
+        <v-alert
+          v-if="playerError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="warning"
+          variant="tonal"
+        >
+          Player Error: {{ playerError }}
+        </v-alert>
 
-      <v-card-actions>
-        <v-form class="d-flex w-100" @submit.prevent="handleSubmit">
+        <div ref="messagesDiv" class="chat-messages">
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message', getMessageClass(msg.sender)]"
+          >
+            <div class="message-container">
+              <div v-if="msg.sender !== 'System'" :class="['message-avatar', 'mr-3', getAvatarClass(msg.sender)]">
+                <span>{{ msg.sender.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="message-content">
+                <div v-if="msg.sender !== 'System' && msg.sender !== 'You'" class="message-sender text-subtitle-2 font-weight-medium">
+                  {{ msg.sender }}
+                </div>
+                <div
+                  class="message-text"
+                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
+                  v-if="msg.sender === agentName && !msg.isAudioPlaceholder"
+                  v-html="parseMarkdown(msg.text)"
+                ></div>
+                <div
+                  class="message-text"
+                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
+                  v-else
+                >
+                  {{ msg.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </v-card-text>
+
+      <v-card-actions class="pa-4">
+         <v-form class="d-flex w-100 align-items-baseline" @submit.prevent="handleSubmit">
           <v-text-field
             ref="messageInput"
             v-model="currentMessage"
             append-inner-icon="mdi-send"
             class="mr-2"
             density="comfortable"
+            :disabled="isSending || isConnectingWs"
             hide-details
             label="Message"
             variant="outlined"
             @click:append-inner="handleSubmit"
+            @keydown.enter="handleSubmit"
           />
 
           <v-btn
-            color="primary"
-            :disabled="!currentMessage.trim()"
-            type="submit"
-          >
-            Send
+            class="mr-2"
+            :color="isRecording ? 'error' : 'secondary'"
+            :disabled="isSending"
+            icon
+            :loading="isConnectingWs"
+            :title="isRecording ? 'Stop Recording' : 'Start Recording'"
+            @click="toggleRecording"
+            >
+            <v-icon>{{ isRecording ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
           </v-btn>
-        </v-form>
+
+          </v-form>
       </v-card-actions>
     </v-card>
   </v-container>
 </template>
 
 <script lang="ts" setup>
-  import { onMounted, ref } from 'vue';
-  import { marked } from 'marked'; // Import the markdown parser
+  import { nextTick, onMounted, onUnmounted, type Ref, ref, watch } from 'vue';
+  import { marked } from 'marked';
+  import { useWebSocket } from '@/composables/useWebSocket';
+  import { useAudioRecorder } from '@/composables/useAudioRecorder';
+  import { useAudioPlayer } from '@/composables/useAudioPlayer';
+  import type { FetchChatResponse, ReceivedAudio,ChatMessage} from '@/types/chat'; // Import relevant types
 
-  // API base URL from environment variables with fallback
+  // --- Reactive State ---
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-  const access_token = import.meta.env.VITE_ACCESS_TOKEN
-  const app_name = import.meta.env.VITE_APP_NAME || 'income_tax_agent';
-  const agent_name = import.meta.env.VITE_AGENT_NAME || 'IncomeTaxAgent';
-  const welcome_message = import.meta.env.VITE_WELCOME_MESSAGE || 'Welcome to the Income Tax Agent! How can I help you today?';
-
-  console.log('access_token', access_token);
-
-  // References
-  const messagesDiv = ref<HTMLDivElement | null>(null);
-  const messageInput = ref<HTMLInputElement | null>(null);
-  const currentMessage = ref('');
-
+  const access_token = import.meta.env.VITE_ACCESS_TOKEN || '';
   // Session data
-  const appName = ref(app_name);
-  const userId = ref('user_123');
-  const sessionId = ref('s_123');
-  const sessionState = ref({});
+  const appName = import.meta.env.VITE_APP_NAME || 'income_tax_agent';
+  const agentName = import.meta.env.VITE_AGENT_NAME || 'IncomeTaxAgent';
+  const welcomeMessage = import.meta.env.VITE_WELCOME_MESSAGE || 'Welcome to the Income Tax Agent! How can I help you today?';
+  const userId = ref(import.meta.env.VITE_USER_ID || 'user_123');
+  const sessionId = ref(import.meta.env.VITE_SESSION_ID || 's_123');
 
-  // Response types
-  interface MessagePart {
-    text: string;
+
+  const messagesDiv = ref<HTMLDivElement | null>(null); // Ref for the message container div
+  const messageInput = ref<HTMLInputElement | null>(null); // Ref for the text input
+  const currentMessage = ref(''); // v-model for the text input
+  const fetchError = ref<string | null>(null);
+  const isSending = ref(false); // For text message submission
+  const isConnectingWs = ref(false); // For WebSocket connection status
+  const wsError = ref<string | null>(null);
+  const recorderError = ref<string | null>(null);
+  const playerError = ref<string | null>(null);
+
+  const messages = ref<ChatMessage[]>([]); // Reactive array to hold messages
+  // *** END OF MODIFIED Message data management ***
+
+
+  // --- WebSocket Setup ---
+  const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+  let hostname = '';
+  let port = '';
+  try {
+    const parsedApiUrl = new URL(apiBaseUrl);
+    hostname = parsedApiUrl.hostname;
+    port = parsedApiUrl.port;
+  } catch (e) {
+    console.error('Invalid VITE_API_URL:', apiBaseUrl, e);
+    hostname = 'localhost';
+    port = '8000';
   }
+  const wsBaseUrl = `${wsProtocol}//${hostname}${port ? ':' + port : ''}`;
+  const wsUrl: Ref<string> = ref(`${wsBaseUrl}/run_live?app_name=${appName}&user_id=${userId.value}&session_id=${sessionId.value}&token=${access_token}`);
 
-  interface ChatResponse {
-    content: {
-      parts: MessagePart[];
-      role: string;
-    };
-    invocation_id: string;
-    author: string;
-    id: string;
-    timestamp: number;
-  }
+  // --- Composables ---
+  const {
+    isConnected,
+    error: wsErrorComposable, // Rename to avoid conflict with local ref
+    receivedAudio,
+    connect,
+    sendAudioChunk,
+    disconnect,
+  } = useWebSocket(wsUrl.value);
 
-  // Create a new session for the user
+  const {
+    isRecording,
+    error: recorderErrorComposable, // Rename
+    startRecording,
+    stopRecording,
+  } = useAudioRecorder(handleAudioChunkCallback);
+
+  const {
+    error: playerErrorComposable, // Rename
+    addAudioChunk: playReceivedAudioChunk,
+    cleanup: cleanupPlayer,
+  } = useAudioPlayer();
+
+  // --- Watchers for Errors from Composables ---
+  watch(wsErrorComposable, newVal => { wsError.value = newVal; });
+  watch(recorderErrorComposable, newVal => { recorderError.value = newVal; });
+  watch(playerErrorComposable, newVal => { playerError.value = newVal; });
+
+  // --- API Calls & Logic ---
+
   const createSession = async () => {
+    fetchError.value = null; // Clear previous error
     try {
       const response = await fetch(
-        `${apiBaseUrl}/apps/${appName.value}/users/${userId.value}/sessions/${sessionId.value}`,
+        `${apiBaseUrl}/apps/${appName}/users/${userId.value}/sessions/${sessionId.value}`,
         {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access_token}`,
-          },
-          body: JSON.stringify({
-            state: {
-              // Initial state can be set here if needed
-            },
-          }),
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${access_token}` },
+          body: JSON.stringify({ state: {} }), // Simplified body
         }
       );
-
-      if(response.status === 400){
+      if (response.status === 400) {
         const data = await response.json();
-        if (data.detail && data.detail.includes('Session already exists')) {
-          console.log('Session already exists:', data.detail);
+        if (data.detail?.includes('Session already exists')) {
+          console.log('Session already exists.');
           return data;
         }
       }
       if (!response.ok) {
-        throw new Error(`Failed to create session: ${response.status}`);
+        throw new Error(`Failed: ${response.status} ${response.statusText}`);
       }
-
       const data = await response.json();
-      console.log('Session created successfully:', data);
-      sessionState.value = data.state || {};
-
+      console.log('Session ensured:', data);
+      addMessage('System', welcomeMessage);
       return data;
-    } catch (error) {
-      console.error('Error creating session:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('Error ensuring session:', error);
+      fetchError.value = `Session Error: ${error.message || 'Unknown error'}`;
     }
   };
 
-  // Send a query to the API
-  const sendQuery = async (messageText: string): Promise<ChatResponse[]> => {
+  const sendQuery = async (messageText: string): Promise<void> => {
+    if (isSending.value) return;
+    isSending.value = true;
+    fetchError.value = null;
     try {
-      const response = await fetch(
-        `${apiBaseUrl}/run`,
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${access_token}`,
-          },
-          body: JSON.stringify({
-            app_name: appName.value,
-            user_id: userId.value,
-            session_id: sessionId.value,
-            new_message: {
-              role: 'user',
-              parts: [{ text: messageText }],
-            },
-          }),
-        }
-      );
+      await createSession(); // Ensure session if needed per message
 
-      if (!response.ok) {
-        throw new Error(`Failed to send query: ${response.status}`);
-      }
-
-      const data = await response.json() as ChatResponse[];
-
-      return data;
-    } catch (error) {
-      console.error('Error sending query:', error);
-      throw error;
-    }
-  };
-
-  // Parse markdown text to HTML
-  const parseMarkdown = (text: string): string => {
-    try {
-      // Configure marked for safe rendering
-      marked.setOptions({
-        breaks: true, // Add line breaks
-        gfm: true, // GitHub Flavored Markdown
+      const response = await fetch(`${apiBaseUrl}/run`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${access_token}` },
+        body: JSON.stringify({
+          app_name: appName,
+          user_id: userId.value,
+          session_id: sessionId.value,
+          new_message: { role: 'user', parts: [{ text: messageText }] },
+        }),
       });
 
-      // Return parsed markdown - use marked.parse() with the sync option
-      return marked.parse(text, { async: false }) as string;
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
+      }
+
+      const data = await response.json() as FetchChatResponse[];
+      if (data.length > 0 && data[0].content?.parts?.length > 0) {
+        addMessage(agentName, data[0].content.parts[0].text);
+      }
+    } catch (error: any) {
+      console.error('Error sending query:', error);
+      fetchError.value = `Send Error: ${error.message || 'Unknown error'}`;
+      // *** MODIFIED: Use addMessage instead of addMessageToDiv ***
+      addMessage('System', `Error sending message: ${error.message || 'Please try again.'}`);
+    } finally {
+      isSending.value = false;
+    }
+  };
+
+  // --- Shared Methods ---
+
+  const parseMarkdown = (text: string): string => {
+    try {
+      marked.setOptions({ breaks: true, gfm: true });
+      // Ensure it returns a string, handle potential non-string returns if necessary
+      const parsed = marked.parse(text, { async: false });
+      return typeof parsed === 'string' ? parsed : String(parsed);
     } catch (error) {
       console.error('Error parsing markdown:', error);
-      return text; // Return original text if parsing fails
+      return text; // Return original text on error
     }
   };
 
-  // Add a message to the messages div with Vuetify styling and markdown support
-  const addMessageToDiv = (sender: string, message: string) => {
-    if (messagesDiv.value) {
-      const messageElement = document.createElement('div');
-      messageElement.className = 'message ' + (sender === 'You' ? 'user-message' : 'agent-message');
 
-      // Create message container with Vuetify-like styling
-      const messageContainer = document.createElement('div');
-      messageContainer.className = 'd-flex message-container';
+  const addMessage = (sender: string, messageText: string, isAudioPlaceholder = false) => {
+    console.log('Adding message from:', sender); // Keep for debugging
+    const newMessage: ChatMessage = {
+      id: Date.now() + Math.random().toString(36).substring(7), // Simple unique ID
+      sender,
+      text: messageText,
+      isAudioPlaceholder,
+      timestamp: Date.now(),
+    };
+    messages.value.push(newMessage);
 
-      // Create avatar
-      const avatar = document.createElement('div');
-      avatar.className = 'message-avatar mr-3';
-      avatar.innerHTML = `
-        <div class="v-avatar" style="background-color: ${sender === 'You' ? '#1976d2' : '#4caf50'}; color: white; height: 36px; width: 36px; display: flex; align-items: center; justify-content: center; border-radius: 50%;">
-          <span>${sender.charAt(0)}</span>
-        </div>
-      `;
-
-      // Parse markdown for agent messages, but not for user messages
-      const messageHtml = sender !== 'You' ? parseMarkdown(message) : message;
-
-      // Create content with inline styles to ensure color is applied
-      const content = document.createElement('div');
-      content.className = 'message-content';
-      content.style.color = 'black'; // Apply color directly with inline style
-      content.innerHTML = `
-        <div class="text-subtitle-2 font-weight-medium" style="color: black;">${sender}</div>
-        <div class="message-text" style="color: black;">${messageHtml}</div>
-      `;
-
-      // Assemble the message
-      messageContainer.appendChild(avatar);
-      messageContainer.appendChild(content);
-      messageElement.appendChild(messageContainer);
-
-      messagesDiv.value.appendChild(messageElement);
-      messagesDiv.value.scrollTop = messagesDiv.value.scrollHeight;
-
-      // Add syntax highlighting to code blocks if any
-      if (sender !== 'You' && messageElement.querySelectorAll('pre code').length > 0) {
-        // You could add a library like highlight.js here to enhance code blocks
-        // For example: hljs.highlightAll();
+    // Scroll to bottom after DOM updates
+    nextTick(() => {
+      if (messagesDiv.value) {
+        messagesDiv.value.scrollTop = messagesDiv.value.scrollHeight;
       }
-    }
+    });
+  };
+  // *** END OF MODIFIED addMessage ***
+
+
+  // *** NEW: Helper functions for dynamic classes ***
+  const getMessageClass = (sender: string): string => {
+    if (sender === 'You') return 'user-message';
+    if (sender === 'System') return 'system-message';
+    // Default to agent for any other sender string
+    return 'agent-message';
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: Event) => {
-    // Prevent the default form submission
-    e.preventDefault();
+  const getAvatarClass = (sender: string): string => {
+    if (sender === 'You') return 'user-avatar';
+    // Add more checks if needed for different avatar types
+    return 'agent-avatar'; // Default to agent avatar
+  };
+  // *** END OF NEW Helper functions ***
 
-    // Get the message from the input
+
+  // Handle text form submission
+  const handleSubmit = (e?: Event) => {
+    if (e) e.preventDefault();
+    if (isSending.value || isConnectingWs.value) return;
+
     const message = currentMessage.value.trim();
-
-    // If the message is empty, do nothing
     if (!message) return;
 
-    try {
-      // Display the user message in the UI
-      addMessageToDiv('You', message);
+    if (isRecording.value) {
+      toggleRecording();
+    }
 
-      // Call the API to get a response
-      const responseData = await sendQuery(message);
+    // *** MODIFIED: Use addMessage instead of addMessageToDiv ***
+    addMessage('You', message);
+    sendQuery(message); // Call API to get agent response
 
-      // Process and display the agent's response
-      if (responseData.length > 0) {
-        const firstResponse = responseData[0];
-        if (firstResponse.content.parts.length > 0) {
-          const responseText = firstResponse.content.parts[0].text;
-          const author = firstResponse.author || 'Agent';
+    currentMessage.value = '';
+    // if (messageInput.value) { messageInput.value.focus(); } // Re-enable if needed
+  };
 
-          // Add the agent's response to the UI
-          addMessageToDiv(author, responseText);
-        }
+  // --- Audio/WebSocket Specific Methods ---
+
+  const toggleRecording = async (): Promise<void> => {
+    if (isSending.value) {
+      addMessage('System', 'Please wait for the current message to send.');
+      return;
+    }
+
+    if (isRecording.value) {
+      console.log('Stopping recording...');
+      addMessage('System', 'Stopping recording...');
+      stopRecording();
+      console.log('Disconnecting audio WebSocket...');
+      disconnect();
+      addMessage('System', 'Recording stopped. Audio connection closed.');
+    } else {
+      if (isConnected.value) {
+        console.warn('Already connected? Disconnecting before new attempt.');
+        disconnect();
       }
+      console.log('Attempting to connect audio WebSocket...');
+      addMessage('System', 'Connecting for audio...');
+      isConnectingWs.value = true;
+      wsError.value = null;
 
-      // Clear the input field
-      currentMessage.value = '';
+      try {
+        connect();
+        await new Promise((resolve, reject) => {
+          let waitTimeout: any = null;
+          const checkConnection = () => {
+            if (isConnected.value) { clearTimeout(waitTimeout); resolve(true); }
+            else if (wsError.value) { clearTimeout(waitTimeout); reject(new Error(wsError.value)); }
+          };
+          const stopWatcher = watch([isConnected, wsError], checkConnection, { immediate: true });
+          waitTimeout = setTimeout(() => {
+            stopWatcher();
+            reject(new Error('WebSocket connection timed out (5s).'));
+          }, 5000);
+        });
 
-      // Focus the input for the next message
-      if (messageInput.value) {
-        messageInput.value.focus();
+        isConnectingWs.value = false;
+        console.log('Audio WebSocket connected. Starting recording...');
+        addMessage('System', 'Audio connection established. Recording...');
+        await startRecording();
+      } catch (err: any) {
+        console.error('Failed to start recording process:', err);
+        isConnectingWs.value = false;
+        addMessage('System', `Failed to start recording: ${err.message || wsError.value || 'Unknown error'}`);
+        disconnect();
       }
-    } catch (error) {
-      console.error('Error handling message submission:', error);
-      // Optionally display an error message in the UI
-      addMessageToDiv(agent_name, 'Failed to send message. Please try again.');
     }
   };
 
-  // Initialize the component
-  onMounted(async () => {
-    try {
-      await createSession();
-      console.log('Chat session initialized');
-
-      // Add a welcome message
-      addMessageToDiv(agent_name, welcome_message);
-
-      // Focus the input field when the component is mounted
-      if (messageInput.value) {
-        messageInput.value.focus();
+  function handleAudioChunkCallback (audioData: Uint8Array) {
+    if (isConnected.value) {
+      sendAudioChunk(audioData);
+    } else {
+      console.warn('Received audio chunk, but WebSocket disconnected.');
+      if (isRecording.value) {
+        stopRecording();
+        addMessage('System', 'Audio connection lost. Recording stopped.');
       }
-    } catch (error) {
-      console.error('Failed to initialize chat session:', error);
-      addMessageToDiv(agent_name, 'Failed to initialize chat session. Please try again.');
+    }
+  }
+
+  // --- Lifecycle & Watchers ---
+  onMounted(async () => {
+    await createSession(); // Ensure session exists on load
+
+    if (messageInput.value) {
+      messageInput.value.focus();
     }
   });
+
+  onUnmounted(() => {
+    if (isRecording.value) stopRecording();
+    if (isConnected.value) disconnect();
+    cleanupPlayer();
+  });
+
+  watch(receivedAudio, (newAudioInfo: ReceivedAudio | null) => {
+    if (newAudioInfo && isConnected.value) {
+      playReceivedAudioChunk(newAudioInfo);
+
+      addMessage(agentName, '[Playing received audio...]', true); // Removed to reduce clutter
+    }
+  });
+
+  watch(wsError, newError => { // Watch the local wsError ref
+    if (newError && isRecording.value) { // Check if recording when error occurs
+      console.error('WebSocket error during recording:', newError);
+      addMessage('System', `Audio connection error: ${newError}. Stopping recording.`);
+      if (isRecording.value) stopRecording();
+      disconnect();
+      isConnectingWs.value = false; // Ensure loading state is reset
+    }
+  });
+
 </script>
 
-<style scoped>
-.chat-messages {
-  height: 400px;
-  overflow-y: auto;
-  padding: 16px;
-  background-color: #f5f5f5;
-  border-radius: 8px;
-}
+<style scoped lang="scss">
+  /* Use theme variables for background and text color */
+  .chat-messages {
+    height: 400px; /* Or use calc(100vh - Xpx) for better responsiveness */
+    overflow-y: auto;
+    padding: 16px;
+    background-color: rgb(var(--v-theme-surface)); /* Use surface color */
+    color: rgb(var(--v-theme-on-surface)); /* Default text color */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+  }
 
-.message {
-  margin-bottom: 16px;
-}
+  .message {
+    margin-bottom: 16px;
+    // max-width: 85%; // This might conflict with bubble max-width, consider removing or adjusting
+    display: flex;
+    width: 100%; 
+  }
 
-.message-container {
-  display: flex;
-  align-items: flex-start;
-}
+  /* Align messages */
+  .user-message {
+    align-self: flex-end;
+    justify-content: flex-end; 
+  }
+  .agent-message {
+    align-self: flex-start;
+    justify-content: flex-start; 
+  }
+  .system-message {
+    align-self: center; /* Center system messages */
+    max-width: 100%;
+  }
 
-.message-content {
-  padding: 8px 12px;
-  border-radius: 8px;
-  max-width: 80%;
-  color: black !important;
-}
 
-.user-message .message-content {
-  background-color: #e3f2fd;
-}
+  .message-container {
+    padding: 8px 12px;
+    border-radius: 8px;
+    min-width: 50px;       // Set a minimum width (adjust as needed)
+    max-width: 75%;       // Set a maximum width (relative to parent .message)
+    display: inline-block;  // Allows bubble to size to content horizontally
+    text-align: left;     // Ensure text aligns left within the bubble
+    word-break: break-word;
+    overflow-wrap: break-word;
+    hyphens: auto;
+  }
 
-.agent-message .message-content {
-  background-color: #e8f5e9;
-}
+  /* Common Avatar Styling */
+  .message-avatar {
+    flex-shrink: 0; /* Prevent avatar from shrinking */
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    color: white; /* Default text color for avatars */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    margin-bottom: 10px; /* Updated margin to bottom */
+  }
 
-.message-text {
-  white-space: pre-wrap;
-  color: black !important;
-}
+  /* Specific Avatar Colors using Theme */
+  .user-avatar {
+    background-color: rgb(var(--v-theme-primary));
+    color: rgb(var(--v-theme-on-primary));
+  }
+  .agent-avatar {
+    /* Use secondary or success color for agent */
+    background-color: rgb(var(--v-theme-secondary));
+    color: rgb(var(--v-theme-on-secondary)); /* Ensure contrast */
+  }
 
-.message-content div {
-  color: black !important;
-}
+  /* User Message Content Bubble */
+  .user-message .message-content {
+    background-color: rgb(var(--v-theme-surface-variant)); // Use a theme surface variant color
+    color: rgb(var(--v-theme-on-surface-variant)); // Use corresponding text color for readability
+    border-bottom-right-radius: 0px; // Pointy corner
+    border-bottom-left-radius: 8px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+  }
 
-/* Markdown styling */
-.message-text h1,
-.message-text h2,
-.message-text h3,
-.message-text h4,
-.message-text h5,
-.message-text h6 {
-  color: black !important;
-  margin-top: 10px;
-  margin-bottom: 5px;
-}
 
-.message-text p {
-  margin-bottom: 8px;
-}
+  /* Agent Message Content Bubble */
+  .agent-message .message-content {
+    background-color: rgba(var(--v-theme-on-surface), 0.08);
+    color: rgb(var(--v-theme-on-surface));
+    border-bottom-left-radius: 0px; // Pointy corner
+    border-bottom-right-radius: 8px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
 
-.message-text ul,
-.message-text ol {
-  padding-left: 20px;
-  margin-bottom: 8px;
-}
+  }
 
-.message-text code {
-  background-color: rgba(0, 0, 0, 0.06);
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: monospace;
-}
 
-.message-text pre {
-  background-color: rgba(0, 0, 0, 0.06);
-  padding: 8px;
-  border-radius: 4px;
-  overflow-x: auto;
-  margin-bottom: 8px;
-}
 
-.message-text pre code {
-  background-color: transparent;
-  padding: 0;
-}
+  /* System Message Styling */
+  .system-message .message-container {
+    justify-content: center; /* Center system text */
+  }
+  .system-message .message-content {
+    padding: 0; /* No bubble background */
+    background-color: transparent !important;
+  }
+  .system-message .message-text {
+    font-style: italic;
+    color: rgba(var(--v-theme-on-surface), var(--v-disabled-opacity)); /* Dimmed color */
+    text-align: center;
+    font-size: 0.9em;
+  }
 
-.message-text a {
-  color: #1976d2 !important;
-  text-decoration: none;
-}
 
-.message-text a:hover {
-  text-decoration: underline;
-}
+  /* General Content Styling */
+  .message-content {
+    padding: 8px 12px;
+    border-radius: 8px;
+  }
 
-.message-text table {
-  border-collapse: collapse;
-  width: 100%;
-  margin-bottom: 8px;
-}
+  .message-sender {
+    margin-bottom: 2px; /* Small space between sender and text */
+  }
 
-.message-text th,
-.message-text td {
-  border: 1px solid #ddd;
-  padding: 8px;
-  text-align: left;
-}
+  .message-text {
+    white-space: pre-wrap; /* Keep line breaks */
+    word-wrap: break-word; /* Break long words */
+    line-height: 1.4;
+  }
 
-.message-text blockquote {
-  border-left: 4px solid #ddd;
-  padding-left: 10px;
-  margin-left: 0;
-  color: #666;
-}
+  /* Markdown styling using :deep() or >>> */
+  /* Use :deep() which is recommended over >>> */
+  .message-text :deep(h1),
+  .message-text :deep(h2),
+  .message-text :deep(h3),
+  .message-text :deep(h4),
+  .message-text :deep(h5),
+  .message-text :deep(h6) {
+    color: inherit !important;
+    margin-top: 12px;
+    margin-bottom: 6px;
+    line-height: 1.2;
+  }
+  .message-text :deep(p) {
+    margin-bottom: 8px;
+    color: inherit !important;
+  }
+  .message-text :deep(ul),
+  .message-text :deep(ol) {
+    padding-left: 20px;
+    margin-bottom: 8px;
+    color: inherit !important;
+  }
+  .message-text :deep(code) {
+    background-color: rgba(var(--v-theme-on-surface), 0.1);
+    padding: 2px 5px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 0.9em;
+    color: inherit !important;
+  }
+  .message-text :deep(pre) {
+    background-color: rgba(var(--v-theme-on-surface), 0.1);
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin-bottom: 8px;
+  }
+  .message-text :deep(pre code) {
+    background-color: transparent;
+    padding: 0;
+    font-size: 1em;
+    color: inherit !important;
+  }
+  .message-text :deep(a) {
+    color: rgb(var(--v-theme-primary)) !important;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .message-text :deep(a:hover) {
+    text-decoration: underline;
+  }
+  .message-text :deep(table) {
+    border-collapse: collapse;
+    width: 100%;
+    margin-bottom: 10px;
+  }
+  .message-text :deep(th),
+  .message-text :deep(td) {
+    border: 1px solid rgba(var(--v-theme-on-surface), 0.15);
+    padding: 8px 10px;
+    text-align: left;
+    color: inherit !important;
+  }
+  .message-text :deep(blockquote) {
+    border-left: 4px solid rgba(var(--v-theme-on-surface), 0.2);
+    padding-left: 12px;
+    margin-left: 0;
+    margin-top: 8px;
+    margin-bottom: 8px;
+    color: rgba(var(--v-theme-on-surface), 0.8) !important;
+  }
+
+  /* Italic style for audio placeholder */
+  .font-italic {
+      font-style: italic;
+  }
 </style>
