@@ -2,11 +2,13 @@
 
 @access_token={{$dotenv VITE_ACCESS_TOKEN}}
 
+@app_name={{$dotenv VITE_APP_NAME}}
+
 ### get all apps
 GET http://{{host}}/list-apps
 
 ### Create a new session for a user in the income tax agent
-POST http://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
+POST http://{{host}}/apps/{{app_name}}/users/user_123/sessions/s_123
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
@@ -18,22 +20,22 @@ Authorization: Bearer {{access_token}}
 }
 
 ### Get user's sessions list
-GET http://{{host}}/apps/income_tax_agent/users/user_123/sessions
+GET http://{{host}}/apps/{{app_name}}/users/user_123/sessions
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 {
-    "app_name":"income_tax_agent",
+    "app_name":"{{app_name}}",
     "user_id":"user_123"
 }
 
 ### Delete a session for a user in the income tax agent
-DELETE http://{{host}}/apps/income_tax_agent/users/user_123/sessions/s_123
+DELETE http://{{host}}/apps/{{app_name}}/users/user_123/sessions/s_123
 Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 {
-    "app_name":"income_tax_agent",
+    "app_name":"{{app_name}}",
     "user_id":"user_123",
     "session_id":"s_123"
 }
@@ -44,7 +46,7 @@ Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 {
-    "app_name":"income_tax_agent",
+    "app_name":"{{app_name}}",
     "user_id":"user_123",
     "session_id":"s_123",
     "new_message":{
@@ -61,7 +63,7 @@ Content-Type: application/json
 Authorization: Bearer {{access_token}}
 
 {
-    "app_name":"income_tax_agent",
+    "app_name":"{{app_name}}",
     "user_id":"user_123",
     "session_id":"s_123",
     "new_message":{
@@ -76,11 +78,12 @@ Authorization: Bearer {{access_token}}
 
 
 ### Get user's sessions list
-GET http://{{host}}/apps/income_tax_agent/users/user_123/sessions
+GET http://{{host}}/apps/{{app_name}}/users/user_123/sessions
 Content-Type: application/json
+Authorization: Bearer {{access_token}}
 
 {
-    "app_name":"income_tax_agent",
+    "app_name":"{{app_name}}",
     "user_id":"user_123"
 }
 

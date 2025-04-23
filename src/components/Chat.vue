@@ -49,6 +49,11 @@
   // API base URL from environment variables with fallback
   const apiBaseUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
   const access_token = import.meta.env.VITE_ACCESS_TOKEN
+  const app_name = import.meta.env.VITE_APP_NAME || 'income_tax_agent';
+  const agent_name = import.meta.env.VITE_AGENT_NAME || 'IncomeTaxAgent';
+  const welcome_message = import.meta.env.VITE_WELCOME_MESSAGE || 'Welcome to the Income Tax Agent! How can I help you today?';
+
+  console.log('access_token', access_token);
 
   // References
   const messagesDiv = ref<HTMLDivElement | null>(null);
@@ -56,7 +61,7 @@
   const currentMessage = ref('');
 
   // Session data
-  const appName = ref('income_tax_agent');
+  const appName = ref(app_name);
   const userId = ref('user_123');
   const sessionId = ref('s_123');
   const sessionState = ref({});
@@ -258,7 +263,7 @@
     } catch (error) {
       console.error('Error handling message submission:', error);
       // Optionally display an error message in the UI
-      addMessageToDiv('System', 'Failed to send message. Please try again.');
+      addMessageToDiv(agent_name, 'Failed to send message. Please try again.');
     }
   };
 
@@ -269,7 +274,7 @@
       console.log('Chat session initialized');
 
       // Add a welcome message
-      addMessageToDiv('IncomeTaxAgent', 'Welcome to the Income Tax Agent! How can I help you today?');
+      addMessageToDiv(agent_name, welcome_message);
 
       // Focus the input field when the component is mounted
       if (messageInput.value) {
@@ -277,7 +282,7 @@
       }
     } catch (error) {
       console.error('Failed to initialize chat session:', error);
-      addMessageToDiv('System', 'Failed to initialize chat session. Please try again.');
+      addMessageToDiv(agent_name, 'Failed to initialize chat session. Please try again.');
     }
   });
 </script>
