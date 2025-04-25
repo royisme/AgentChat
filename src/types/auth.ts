@@ -5,6 +5,8 @@ export interface User {
   name: string;
   picture?: string;
   preferences?: UserPreferences;
+  createdAt?: string;
+  updatedAt?: string;
 }
 export interface AuthState {
   user: User | null;

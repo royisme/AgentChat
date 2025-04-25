@@ -22,13 +22,13 @@ router.beforeEach((to, from, next) => {
     authStore.initializeAuth()
   }
   // 定义需要认证的路由路径列表
-  const authRequiredRoutes = ['/chat', '/profile', '/dashboard'] // 添加所有需要认证的路径
+  const authRequiredRoutes = ['/chat', '/user'] // 添加所有需要认证的路径
 
   // 检查当前路由是否需要认证
   const requiresAuth = authRequiredRoutes.some(route => to.path.startsWith(route));
   // --- 添加详细日志 ---
   console.log(
-      `Router Guard: Navigating to '${to.path}'. Requires Auth: ${requiresAuth}. Store isAuthenticated: ${authStore.isAuthenticated}. Token exists: ${!!authStore.appToken}`
+    `Router Guard: Navigating to '${to.path}'. Requires Auth: ${requiresAuth}. Store isAuthenticated: ${authStore.isAuthenticated}. Token exists: ${!!authStore.appToken}`
   );
   // --- 结束添加日志 ---
 

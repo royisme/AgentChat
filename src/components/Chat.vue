@@ -1,7 +1,7 @@
 <template>
   <v-container>
     <v-card class="mx-auto" elevation="2" max-width="800">
-      <v-card-title class="d-flex align-center">
+      <v-card-title class="d-flex align-center rounded-top">
         <v-icon class="mr-2" color="primary">mdi-chat</v-icon>
         Agent Chat (Hybrid: Fetch Text + WS Audio)
       </v-card-title>
@@ -116,7 +116,7 @@
 </template>
 
 <script lang="ts" setup>
-  import { nextTick, onMounted, onUnmounted, type Ref, ref, watch } from 'vue';
+  import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
   import { marked } from 'marked';
   import { useWebSocket } from '@/composables/useWebSocket';
   import { useAudioRecorder } from '@/composables/useAudioRecorder';
@@ -182,7 +182,7 @@
     connect: connectWebSocket,
     sendAudioChunk,
     disconnect,
-  } = useWebSocket(wsUrl.value);
+  } = useWebSocket(wsUrl.value || '');
 
   const {
     isRecording,
@@ -401,7 +401,7 @@
 
         isConnectingWs.value = false;
         console.log('Audio WebSocket connected. Starting recording...');
-        addMessage('System', 'Audio connection established. Recording...');
+        addMessage('', 'Audio connection established. Recording...');
         await startRecording();
 
       } catch (err: any) {
@@ -441,18 +441,7 @@
   // Updated: Pass token if needed by backend inside the audio chunk message
   function handleAudioChunkCallback (audioData: Uint8Array) {
     if (isConnected.value && currentToken.value) {
-      // Option 1: Send only audio data (if backend WS endpoint already auth'd via query param)
       sendAudioChunk(audioData);
-
-      // Option 2: If backend expects token IN the message (more secure for WS):
-      // const payload = {
-      //     // token: currentToken.value, // Send internal token within message
-      //     blob: {
-      //         mime_type: "audio/pcm", // Or appropriate type
-      //         data: arrayBufferToBase64(audioData.buffer) // Assuming helper exists
-      //     }
-      // };
-      // ws.value?.send(JSON.stringify(payload)); // Assuming direct ws access or modify composable
 
     } else {
       console.warn('Received audio chunk, but WebSocket disconnected or no token.');
@@ -469,9 +458,7 @@
     // Wait for authentication to be ready before creating session or connecting WS
     if (authStore.isAuthenticated) {
       console.log('User is authenticated on mount.');
-      await createSession(); // Ensure session exists on load for authenticated user
-      // Optionally auto-connect WebSocket here if desired, or wait for user action
-      // await connectAndStartAudio(); // Example: auto-connect audio (maybe not desirable)
+      await createSession();
     } else {
       console.log('User is not authenticated on mount.');
       // Watch for authentication changes if not authenticated initially
@@ -501,7 +488,6 @@
     if (newAudioInfo && isConnected.value) {
       playReceivedAudioChunk(newAudioInfo);
 
-      addMessage(agentName, '[Playing received audio...]', true); // Removed to reduce clutter
     }
   });
 
@@ -532,7 +518,6 @@
 
   .message {
     margin-bottom: 16px;
-    // max-width: 85%; // This might conflict with bubble max-width, consider removing or adjusting
     display: flex;
     width: 100%;
   }
@@ -644,8 +629,6 @@
     line-height: 1.4;
   }
 
-  /* Markdown styling using :deep() or >>> */
-  /* Use :deep() which is recommended over >>> */
   .message-text :deep(h1),
   .message-text :deep(h2),
   .message-text :deep(h3),

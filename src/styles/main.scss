@@ -1,862 +1,132 @@
-// src/styles/main.scss
-@import './settings.scss';
-
-// CSS Variables with Light and Dark Theme Support
+// WCAG AA compliance requirements
 :root {
-  // Light Theme Colors (Default)
-  --primary-50: #EEF2FA;
-  --primary-100: #D1DCF0;
-  --primary-200: #A3B9E2;
-  --primary-300: #7596D2;
-  --primary-400: #4C78C5;
-  --primary-500: #2A5CAD;
-  --primary-600: #214A8F;
-  --primary-700: #193971;
-  --primary-800: #122953;
-  --primary-900: #0B1A36;
+  // Primary color variations
+  --primary-50: #E6EDF5;
+  --primary-100: #BFCEE5;
+  --primary-200: #95AFD4;
+  --primary-300: #6A90C3;
+  --primary-400: #4A78B5;
+  --primary-500: #2960A7;
+  --primary-600: #24579F;
+  --primary-700: #1E4D95;
+  --primary-800: #18438C;
+  --primary-900: #0F327C;
+  --primary-950: #002D72;
 
-  --secondary-50: #E6F7F7;
-  --secondary-100: #CCEEF0;
-  --secondary-200: #99DDE0;
-  --secondary-300: #66CBD1;
-  --secondary-400: #33BAC1;
-  --secondary-500: #1A98A0;
-  --secondary-600: #157B82;
-  --secondary-700: #105E64;
-  --secondary-800: #0A4246;
-  --secondary-900: #052528;
-
-  --accent-50: #FFF8E6;
-  --accent-100: #FFEFC8;
-  --accent-200: #FFE08F;
-  --accent-300: #FFD056;
-  --accent-400: #FFC029;
-  --accent-500: #E6A800;
-  --accent-600: #BD8900;
-  --accent-700: #956B00;
-  --accent-800: #6C4C00;
-  --accent-900: #432E00;
-
-  // Light theme neutral colors
-  --neutral-50: #F7F9FC;
-  --neutral-100: #EDF1F7;
-  --neutral-200: #E1E6EF;
-  --neutral-300: #CCD3E0;
-  --neutral-400: #A8B4C5;
-  --neutral-500: #7D8BA3;
-  --neutral-600: #5E6B85;
-  --neutral-700: #445068;
-  --neutral-800: #2A344A;
-  --neutral-900: #171E2E;
+  // Secondary color variations
+  --secondary-50: #FFF3E6;
+  --secondary-100: #FFE0BF;
+  --secondary-200: #FFCB95;
+  --secondary-300: #FFB66A;
+  --secondary-400: #FFA64A;
+  --secondary-500: #FF9629;
+  --secondary-600: #FF8E24;
+  --secondary-700: #FF831F;
+  --secondary-800: #FF7900;
+  --secondary-900: #FF6701;
   
-  // Status Colors
-  --success: #0B875B;
-  --warning: #E49B23;
-  --error: #D73343;
-  --info: #3178C6;
-
-  // Text colors - light theme
-  --text-primary: var(--neutral-900);
-  --text-secondary: var(--neutral-700);
-  --text-tertiary: var(--neutral-600);
-  --text-inverted: var(--neutral-50);
+  // Neutral tones
+  --neutral-50: #F9FAFB;
+  --neutral-100: #F3F4F6;
+  --neutral-200: #E5E7EB;
+  --neutral-300: #D1D5DB;
+  --neutral-400: #9CA3AF;
+  --neutral-500: #6B7280;
+  --neutral-600: #4B5563;
+  --neutral-700: #374151;
+  --neutral-800: #1F2937;
+  --neutral-900: #111827;
   
-  // Background colors - light theme
-  --bg-primary: var(--neutral-50);
-  --bg-secondary: white;
-  --bg-tertiary: var(--neutral-100);
-  --bg-inverted: var(--neutral-900);
+  // Success, warning, error
+  --success: #28a745;
+  --warning: #ffc107;
+  --error: #dc3545;
   
-  // Border colors - light theme
-  --border-light: var(--neutral-200);
-  --border-medium: var(--neutral-300);
-  --border-heavy: var(--neutral-400);
-  
-  // Spacing (8px system)
+  // Spacing - 8px system
   --spacing-1: 8px;
   --spacing-2: 16px;
   --spacing-3: 24px;
   --spacing-4: 32px;
   --spacing-5: 40px;
   --spacing-6: 48px;
-  
-  // Typography
-  --text-xs: 0.75rem;
-  --text-sm: 0.875rem;
-  --text-base: 1rem;
-  --text-lg: 1.125rem;
-  --text-xl: 1.25rem;
-  --text-2xl: 1.5rem;
-  --text-3xl: 1.875rem;
-  --text-4xl: 2.25rem;
-  
-  // Border radius
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  
-  // Shadows
-  --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.05);
-  --shadow-md: 0 4px 8px -2px rgba(16, 24, 40, 0.1), 0 2px 4px -2px rgba(16, 24, 40, 0.06);
-  --shadow-lg: 0 12px 24px -4px rgba(16, 24, 40, 0.1), 0 4px 8px -4px rgba(16, 24, 40, 0.06);
-  
-  // Base styles
-  font-family: 'Nunito Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  line-height: 1.6;
-  font-weight: 400;
-  color-scheme: light dark;
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-// Dark Theme Variable Overrides
-@media (prefers-color-scheme: dark) {
-  :root {
-    // Text colors - dark theme
-    --text-primary: var(--neutral-100);
-    --text-secondary: var(--neutral-200);
-    --text-tertiary: var(--neutral-300);
-    --text-inverted: var(--neutral-900);
-    
-    // Background colors - dark theme
-    --bg-primary: var(--neutral-900);
-    --bg-secondary: var(--neutral-800);
-    --bg-tertiary: var(--neutral-700);
-    --bg-inverted: white;
-    
-    // Border colors - dark theme
-    --border-light: var(--neutral-700);
-    --border-medium: var(--neutral-600);
-    --border-heavy: var(--neutral-500);
-    
-    // Adjusted shadows for dark mode
-    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-md: 0 4px 8px -2px rgba(0, 0, 0, 0.4), 0 2px 4px -2px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 12px 24px -4px rgba(0, 0, 0, 0.4), 0 4px 8px -4px rgba(0, 0, 0, 0.2);
-  }
-}
-
-// BASE STYLES - using semantic color variables
-body {
-  margin: 0;
-  color: var(--text-primary);
-  background-color: var(--bg-primary);
-  min-width: 320px;
-  min-height: 100vh;
-}
-
-#app {
-  max-width: 1280px; 
-  margin: 0 auto;
-  padding: var(--spacing-4);
-  text-align: center;
-  min-height: 100vh;
-  background-color: var(--bg-primary);
-}
-
-a {
-  font-weight: 500;
-  color: var(--primary-600);
-  text-decoration: none;
-  transition: color 0.2s ease;
-}
-a:hover {
-  color: var(--primary-500);
-}
-
-// Heading styles - using semantic color variables
-h1, h2, h3, h4, h5, h6 {
-  line-height: 1.3;
-  font-weight: 600;
-  margin-top: 0;
-  color: var(--text-primary);
-}
-h1 {
-  font-size: var(--text-4xl);
-  margin-bottom: var(--spacing-3);
-}
-h2 {
-  font-size: var(--text-3xl);
-  margin-bottom: var(--spacing-2);
-}
-h3 {
-  font-size: var(--text-2xl);
-  margin-bottom: var(--spacing-2);
-}
-h4 {
-  font-size: var(--text-xl);
-  margin-bottom: var(--spacing-1);
-}
-
-// Paragraph
-p {
-  margin-bottom: var(--spacing-2);
-  color: var(--text-secondary);
-}
-
-// Buttons
-button, .v-btn {
-  border-radius: var(--radius-md);
-  border: 1px solid transparent;
-  padding: 0.6em 1.4em;
-  font-size: 1em;
-  font-weight: 600;
-  font-family: inherit;
-  background-color: var(--primary-600);
-  color: white;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: var(--shadow-sm);
-}
-button:hover, .v-btn:hover {
-  background-color: var(--primary-700);
-  box-shadow: var(--shadow-md);
-}
-button:focus, .v-btn:focus,
-button:focus-visible, .v-btn:focus-visible {
-  outline: 3px solid rgba(42, 92, 173, 0.3);
-}
-
-.btn-secondary {
-  background-color: var(--secondary-500);
-}
-.btn-secondary:hover {
-  background-color: var(--secondary-600);
-}
-
-.btn-accent {
-  background-color: var(--accent-500);
-  color: var(--neutral-900);
-}
-.btn-accent:hover {
-  background-color: var(--accent-600);
-  color: white;
-}
-
-.btn-outline {
-  background-color: transparent;
-  border: 1.5px solid var(--primary-500);
-  color: var(--primary-600);
-}
-.btn-outline:hover {
-  background-color: var(--primary-50);
-  color: var(--primary-700);
-}
-
-// Cards
-.card {
-  padding: var(--spacing-4);
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--border-light);
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  color: var(--text-primary);
-}
-.card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
-}
-
-// Specific Dark Theme Button Adjustments
-@media (prefers-color-scheme: dark) {
-  .btn-outline {
-    border-color: var(--primary-400);
-    color: var(--primary-300);
-  }
-  .btn-outline:hover {
-    background-color: rgba(42, 92, 173, 0.15);
-    color: var(--primary-200);
-  }
-  
-  .btn-accent {
-    color: var(--neutral-900);
-  }
-  .btn-accent:hover {
-    color: var(--neutral-50);
-  }
-  
-  button:focus, .v-btn:focus,
-  button:focus-visible, .v-btn:focus-visible {
-    outline: 3px solid rgba(76, 120, 197, 0.4);
-  }
-}
-
-// Focus Indicators for Accessibility
+// Focus indicators for accessibility
 :focus-visible {
   outline: 3px solid var(--secondary-400);
   outline-offset: 2px;
 }
 
-// Spacing Utility Classes
+// Base styles
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  color: var(--neutral-900);
+  background-color: var(--neutral-50);
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.2;
+  font-weight: 600;
+  margin-top: 0;
+}
+
+// Helper classes for spacing
 .pa-1 { padding: var(--spacing-1); }
 .pa-2 { padding: var(--spacing-2); }
 .pa-3 { padding: var(--spacing-3); }
 .pa-4 { padding: var(--spacing-4); }
-.pa-5 { padding: var(--spacing-5); }
-.pa-6 { padding: var(--spacing-6); }
 
 .ma-1 { margin: var(--spacing-1); }
 .ma-2 { margin: var(--spacing-2); }
 .ma-3 { margin: var(--spacing-3); }
 .ma-4 { margin: var(--spacing-4); }
-.ma-5 { margin: var(--spacing-5); }
-.ma-6 { margin: var(--spacing-6); }
-
-.pt-1 { padding-top: var(--spacing-1); }
-.pt-2 { padding-top: var(--spacing-2); }
-.pt-3 { padding-top: var(--spacing-3); }
-.pt-4 { padding-top: var(--spacing-4); }
-
-.pb-1 { padding-bottom: var(--spacing-1); }
-.pb-2 { padding-bottom: var(--spacing-2); }
-.pb-3 { padding-bottom: var(--spacing-3); }
-.pb-4 { padding-bottom: var(--spacing-4); }
-
-.mt-1 { margin-top: var(--spacing-1); }
-.mt-2 { margin-top: var(--spacing-2); }
-.mt-3 { margin-top: var(--spacing-3); }
-.mt-4 { margin-top: var(--spacing-4); }
-
-.mb-1 { margin-bottom: var(--spacing-1); }
-.mb-2 { margin-bottom: var(--spacing-2); }
-.mb-3 { margin-bottom: var(--spacing-3); }
-.mb-4 { margin-bottom: var(--spacing-4); }
-
-// Typography Utilities
-.text-xs { font-size: var(--text-xs); }
-.text-sm { font-size: var(--text-sm); }
-.text-base { font-size: var(--text-base); }
-.text-lg { font-size: var(--text-lg); }
-.text-xl { font-size: var(--text-xl); }
-.text-2xl { font-size: var(--text-2xl); }
-
-.text-primary { color: var(--primary-600); }
-.text-secondary { color: var(--secondary-500); }
-.text-accent { color: var(--accent-500); }
-.text-success { color: var(--success); }
-.text-warning { color: var(--warning); }
-.text-error { color: var(--error); }
-.text-muted { color: var(--text-tertiary); }
-
-.font-light { font-weight: 300; }
-.font-normal { font-weight: 400; }
-.font-medium { font-weight: 500; }
-.font-semibold { font-weight: 600; }
-.font-bold { font-weight: 700; }
 
 // Animations
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.3s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
   opacity: 0;
 }
 
+// Message animations
 .message-enter-active,
 .message-leave-active {
   transition: all 0.3s ease;
 }
+
 .message-enter-from {
   opacity: 0;
   transform: translateY(20px);
 }
+
 .message-leave-to {
   opacity: 0;
 }
 
-.slide-up-enter-active,
-.slide-up-leave-active {
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-}
-.slide-up-enter-from {
-  opacity: 0;
-  transform: translateY(30px);
-}
-.slide-up-leave-to {
-  opacity: 0;
-  transform: translateY(-30px);
-}
-
+// Typing indicator animation
 @keyframes typing {
   0% { opacity: 0.3; }
   50% { opacity: 1; }
   100% { opacity: 0.3; }
 }
+
 .typing-indicator span {
   animation: typing 1.4s infinite;
 }
+
 .typing-indicator span:nth-child(2) {
   animation-delay: 0.2s;
 }
+
 .typing-indicator span:nth-child(3) {
   animation-delay: 0.4s;
-}
-
-// Layout Utilities
-.flex { display: flex; }
-.flex-col { flex-direction: column; }
-.items-center { align-items: center; }
-.justify-center { justify-content: center; }
-.justify-between { justify-content: space-between; }
-.gap-1 { gap: var(--spacing-1); }
-.gap-2 { gap: var(--spacing-2); }
-.gap-3 { gap: var(--spacing-3); }
-.gap-4 { gap: var(--spacing-4); }
-
-.w-full { width: 100%; }
-.h-full { height: 100%; }
-.max-w-sm { max-width: 640px; }
-.max-w-md { max-width: 768px; }
-.max-w-lg { max-width: 1024px; }
-.max-w-xl { max-width: 1280px; }
-
-// Container
-.container {
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: var(--spacing-4);
-  padding-right: var(--spacing-4);
-}
-@media (min-width: 640px) {
-  .container {
-    max-width: 640px;
-  }
-}
-@media (min-width: 768px) {
-  .container {
-    max-width: 768px;
-  }
-}
-@media (min-width: 1024px) {
-  .container {
-    max-width: 1024px;
-  }
-}
-@media (min-width: 1280px) {
-  .container {
-    max-width: 1280px;
-  }
-}
-
-// Dark mode text color utilities
-@media (prefers-color-scheme: dark) {
-  .text-primary { color: var(--primary-400); }
-  .text-secondary { color: var(--secondary-400); }
-  .text-accent { color: var(--accent-400); }
-}
-
-/* Insurance Chat Interface Styling - With Semantic Variables */
-.chat-messages {
-  height: 450px;
-  overflow-y: auto;
-  padding: var(--spacing-3);
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border-radius: var(--radius-lg);
-  display: flex;
-  flex-direction: column;
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-  gap: var(--spacing-3);
-  scrollbar-width: thin;
-  scrollbar-color: var(--border-medium) transparent;
-}
-
-/* Scrollbar styling for webkit browsers */
-.chat-messages::-webkit-scrollbar {
-  width: 6px;
-}
-.chat-messages::-webkit-scrollbar-track {
-  background: transparent;
-}
-.chat-messages::-webkit-scrollbar-thumb {
-  background-color: var(--border-medium);
-  border-radius: 20px;
-}
-
-.message {
-  margin-bottom: var(--spacing-2);
-  display: flex;
-  width: 100%;
-  transition: opacity 0.2s ease;
-}
-
-/* Message alignment */
-.user-message {
-  align-self: flex-end;
-  justify-content: flex-end;
-}
-.agent-message {
-  align-self: flex-start;
-  justify-content: flex-start;
-}
-.system-message {
-  align-self: center;
-  max-width: 100%;
-}
-
-.message-container {
-  padding: var(--spacing-1) 0;
-  min-width: 50px;
-  max-width: 78%;
-  display: inline-block;
-  text-align: left;
-  word-break: break-word;
-  overflow-wrap: break-word;
-  hyphens: auto;
-}
-
-/* Avatar Styling */
-.message-avatar {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  color: white;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 600;
-  font-size: 0.9rem;
-  margin: 0 var(--spacing-2);
-  box-shadow: var(--shadow-sm);
-  transition: transform 0.2s ease;
-}
-
-/* Specific Avatar Colors */
-.user-avatar {
-  background-color: var(--primary-600);
-  color: white;
-}
-.agent-avatar {
-  background-color: var(--secondary-500);
-  color: white;
-}
-
-/* User Message Content Bubble */
-.user-message .message-content {
-  background-color: var(--primary-600);
-  color: white;
-  border-bottom-right-radius: 0;
-  border-bottom-left-radius: var(--radius-md);
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  position: relative;
-}
-
-.user-message .message-content::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: -8px;
-  width: 16px;
-  height: 16px;
-  background-color: var(--primary-600);
-  clip-path: polygon(0 0, 0% 100%, 100% 100%);
-}
-
-/* Agent Message Content Bubble */
-.agent-message .message-content {
-  background-color: var(--bg-secondary);
-  color: var(--text-primary);
-  border-bottom-left-radius: 0;
-  border-bottom-right-radius: var(--radius-md);
-  border-top-left-radius: var(--radius-md);
-  border-top-right-radius: var(--radius-md);
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border-light);
-  position: relative;
-}
-
-.agent-message .message-content::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: -8px;
-  width: 16px;
-  height: 16px;
-  background-color: var(--bg-secondary);
-  clip-path: polygon(100% 0, 0% 100%, 100% 100%);
-  border-left: 1px solid var(--border-light);
-  border-bottom: 1px solid var(--border-light);
-}
-
-/* System Message Styling */
-.system-message .message-container {
-  justify-content: center;
-}
-.system-message .message-content {
-  padding: var(--spacing-1) var(--spacing-2);
-  background-color: var(--bg-tertiary) !important;
-  border-radius: var(--radius-md);
-  box-shadow: none;
-}
-.system-message .message-text {
-  font-style: italic;
-  color: var(--text-tertiary);
-  text-align: center;
-  font-size: 0.9em;
-}
-
-/* General Content Styling */
-.message-content {
-  padding: var(--spacing-2) var(--spacing-3);
-  border-radius: var(--radius-md);
-}
-
-.message-sender {
-  margin-bottom: 3px;
-  font-weight: 600;
-  font-size: 0.85rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  opacity: 0.8;
-}
-
-.message-text {
-  white-space: pre-wrap;
-  word-wrap: break-word;
-  line-height: 1.5;
-}
-
-/* Time stamp styling */
-.message-time {
-  font-size: 0.7rem;
-  margin-top: 4px;
-  opacity: 0.7;
-  text-align: right;
-}
-
-/* Markdown styling with updated colors */
-.message-text :deep(h1),
-.message-text :deep(h2),
-.message-text :deep(h3),
-.message-text :deep(h4),
-.message-text :deep(h5),
-.message-text :deep(h6) {
-  color: inherit !important;
-  margin-top: 12px;
-  margin-bottom: 6px;
-  line-height: 1.2;
-}
-.message-text :deep(p) {
-  margin-bottom: 8px;
-  color: inherit !important;
-}
-.message-text :deep(ul),
-.message-text :deep(ol) {
-  padding-left: 20px;
-  margin-bottom: 8px;
-  color: inherit !important;
-}
-
-/* Code styling - different for light and dark modes */
-/* User messages always have white text on primary background regardless of mode */
-.user-message .message-text :deep(code) {
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.9em;
-  color: white !important;
-}
-
-/* Agent message code blocks adapt to color mode */
-.agent-message .message-text :deep(code) {
-  background-color: var(--bg-tertiary);
-  padding: 2px 5px;
-  border-radius: 4px;
-  font-family: monospace;
-  font-size: 0.9em;
-  color: var(--primary-600) !important;
-  border: 1px solid var(--border-light);
-}
-
-/* Pre-formatted code blocks */
-.user-message .message-text :deep(pre) {
-  background-color: rgba(255, 255, 255, 0.1);
-  padding: var(--spacing-2);
-  border-radius: 4px;
-  overflow-x: auto;
-  margin-bottom: 8px;
-}
-.agent-message .message-text :deep(pre) {
-  background-color: var(--bg-tertiary);
-  padding: var(--spacing-2);
-  border-radius: 4px;
-  overflow-x: auto;
-  margin-bottom: 8px;
-  border: 1px solid var(--border-light);
-}
-
-.message-text :deep(pre code) {
-  background-color: transparent;
-  padding: 0;
-  font-size: 1em;
-  color: inherit !important;
-  border: none;
-}
-
-/* Links - different styling for user and agent messages */
-.user-message .message-text :deep(a) {
-  color: white !important;
-  text-decoration: underline;
-  font-weight: 500;
-  text-underline-offset: 2px;
-}
-.agent-message .message-text :deep(a) {
-  color: var(--primary-600) !important;
-  text-decoration: none;
-  font-weight: 500;
-}
-.message-text :deep(a:hover) {
-  text-decoration: underline;
-  opacity: 0.9;
-}
-
-/* Tables */
-.message-text :deep(table) {
-  border-collapse: collapse;
-  width: 100%;
-  margin-bottom: 10px;
-  font-size: 0.9em;
-}
-.user-message .message-text :deep(th),
-.user-message .message-text :deep(td) {
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  padding: 6px 8px;
-  text-align: left;
-  color: inherit !important;
-}
-.agent-message .message-text :deep(th),
-.agent-message .message-text :deep(td) {
-  border: 1px solid var(--border-medium);
-  padding: 6px 8px;
-  text-align: left;
-  color: inherit !important;
-}
-.message-text :deep(th) {
-  font-weight: 600;
-}
-
-/* Blockquotes */
-.user-message .message-text :deep(blockquote) {
-  border-left: 4px solid rgba(255, 255, 255, 0.4);
-  padding-left: 12px;
-  margin-left: 0;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  color: rgba(255, 255, 255, 0.85) !important;
-}
-.agent-message .message-text :deep(blockquote) {
-  border-left: 4px solid var(--primary-300);
-  padding-left: 12px;
-  margin-left: 0;
-  margin-top: 8px;
-  margin-bottom: 8px;
-  color: var(--text-tertiary) !important;
-}
-
-/* Italic style for audio placeholder */
-.font-italic {
-  font-style: italic;
-}
-
-/* Typing indicator */
-.typing-indicator {
-  display: inline-flex;
-  align-items: center;
-  padding: var(--spacing-1) var(--spacing-2);
-  background-color: var(--bg-tertiary);
-  border-radius: var(--radius-md);
-  margin-left: var(--spacing-2);
-}
-
-.typing-indicator span {
-  height: 8px;
-  width: 8px;
-  margin: 0 2px;
-  background-color: var(--text-tertiary);
-  border-radius: 50%;
-  display: inline-block;
-  opacity: 0.4;
-}
-
-/* Chat input area */
-.chat-input-container {
-  display: flex;
-  gap: var(--spacing-2);
-  margin-top: var(--spacing-3);
-  padding: var(--spacing-2);
-  background-color: var(--bg-secondary);
-  border-radius: var(--radius-md);
-  border: 1px solid var(--border-light);
-  box-shadow: var(--shadow-sm);
-}
-
-.chat-input {
-  flex: 1;
-  padding: var(--spacing-2);
-  border: 1px solid var(--border-medium);
-  border-radius: var(--radius-md);
-  font-family: inherit;
-  resize: none;
-  min-height: 40px;
-  background-color: var(--bg-primary);
-  color: var(--text-primary);
-  transition: all 0.2s ease;
-}
-
-.chat-input:focus {
-  outline: none;
-  border-color: var(--primary-400);
-  box-shadow: 0 0 0 3px rgba(42, 92, 173, 0.15);
-}
-
-.send-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background-color: var(--primary-600);
-  color: white;
-  border: none;
-  border-radius: var(--radius-md);
-  width: 40px;
-  height: 40px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.send-button:hover {
-  background-color: var(--primary-700);
-}
-
-/* Hover effects */
-.message:hover .message-avatar {
-  transform: scale(1.05);
-}
-
-/* Dark theme overrides - should be handled by semantic variables now */
-@media (prefers-color-scheme: dark) {  
-  /* Agent link color adjustment for dark mode */
-  .agent-message .message-text :deep(a) {
-    color: var(--primary-400) !important;
-  }
-  
-  /* Adjust focus outline for dark mode */
-  .chat-input:focus {
-    box-shadow: 0 0 0 3px rgba(76, 120, 197, 0.3);
-  }
-  
-  /* Override for agent code color in dark mode */
-  .agent-message .message-text :deep(code) {
-    color: var(--primary-400) !important;
-  }
 }

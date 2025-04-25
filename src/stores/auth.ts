@@ -26,10 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
   });
 
   // Actions
-  function setUserData (userData: User | null) {
-    user.value = userData;
-    if (userData) {
-      localStorage.setItem(USER_KEY, JSON.stringify(userData));
+  function setUserData (mappedUserData: User | null) {
+    user.value = mappedUserData;
+    if (mappedUserData) {
+      localStorage.setItem(USER_KEY, JSON.stringify(mappedUserData));
     } else {
       localStorage.removeItem(USER_KEY);
     }
@@ -40,7 +40,6 @@ export const useAuthStore = defineStore('auth', () => {
     if (tokenValue) {
       localStorage.setItem(APP_TOKEN_KEY, tokenValue);
       try {
-        // Decode YOUR internal JWT to get its expiration
         const decoded: any = jwtDecode(tokenValue);
         if (decoded.exp) {
           appTokenExpiresAt.value = decoded.exp * 1000;
@@ -67,13 +66,13 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Login action - Called AFTER backend verifies Firebase token and returns INTERNAL tokens/user data
   async function login (appTokenData: { token: string; refreshToken?: string; user: User }) {
     setInternalToken(appTokenData.token);
     if (appTokenData.refreshToken) {
       setInternalRefreshToken(appTokenData.refreshToken);
     }
-    setUserData(appTokenData.user);
+    const mappedUser = mapRawUserToUser(appTokenData.user);
+    setUserData(mappedUser);
   }
 
   // Logout action
@@ -123,8 +122,8 @@ export const useAuthStore = defineStore('auth', () => {
         firebaseUser.value = fbUser;
         if (fbUser) {
           const storedInternalToken = localStorage.getItem(APP_TOKEN_KEY);
-          const storedUser = localStorage.getItem(USER_KEY);
-          console.log('Firebase user state changed:', fbUser, storedInternalToken,storedUser);
+          const storedUserRaw = localStorage.getItem(USER_KEY); // Get raw stored data
+
           if (storedInternalToken) {
             setInternalToken(storedInternalToken); // This will check expiry via setter
             if (isInternalTokenExpired.value) {
@@ -132,8 +131,8 @@ export const useAuthStore = defineStore('auth', () => {
               await refreshInternalToken();
             } else {
               setInternalRefreshToken(localStorage.getItem(APP_REFRESH_TOKEN_KEY));
-              setUserData(storedUser ? JSON.parse(storedUser) : null);
-              console.log('Internal token valid, user loaded from storage.');
+              const mappedUser = storedUserRaw ? mapRawUserToUser(JSON.parse(storedUserRaw)) : null;
+              setUserData(mappedUser);
             }
           } else {
 
@@ -172,3 +171,24 @@ export const useAuthStore = defineStore('auth', () => {
     clearAuthData,
   };
 });
+
+function mapRawUserToUser(rawUserData: any): User | null {
+  if (!rawUserData || !rawUserData.id) {
+    // Basic validation: return null if essential data is missing
+    return null;
+  }
+
+  // Perform the mapping from snake_case (in rawUserData) to camelCase (for User interface)
+  const mappedUser: User = {
+    id: rawUserData.id,
+    email: rawUserData.email,
+    name: rawUserData.name,
+    picture: rawUserData.picture,
+    preferences: rawUserData.preferences,
+    createdAt: rawUserData.created_at,
+    updatedAt: rawUserData.updated_at,
+  };
+
+
+  return mappedUser;
+}
