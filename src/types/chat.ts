@@ -4,6 +4,8 @@ export interface ChatMessage {
   text: string;
   isAudioPlaceholder?: boolean; // Optional flag
   timestamp?: number; // Optional timestamp property
+  type?: string; // Optional type property
+  isComplete?: boolean; // Optional flag for completion status
 }
 export interface FetchMessagePart { text: string; }
 
@@ -35,8 +37,8 @@ interface Content {
 
 export interface WebSocketPacket {
   content?: Content; // Main structure for text/audio/other data parts
-  turn_complete?: boolean; // Keep status flags
-  interrupted?: boolean;   // Keep status flags
+  turn_complete?: boolean;
+  interrupted?: boolean;
 
   invocation_id?: string;
   author?: string;
