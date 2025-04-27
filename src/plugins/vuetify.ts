@@ -10,48 +10,54 @@ import 'vuetify/styles'
 
 // Composables
 import { createVuetify } from 'vuetify'
-
-const lightThemeColors = {
-  primary: '#3F51B5',
-  'primary-darken-1': '#303F9F',
-  secondary: '#009688',
-  'secondary-darken-1': '#00796B',
-  accent: '#FFC107',
-  error: '#B00020',
-  info: '#2196F3',
-  success: '#4CAF50',
-  warning: '#FB8C00',
-  userMessageBg: '#E3F2FD',
-  agentMessageBg: '#E8F5E9',
+import * as components from 'vuetify/components'
+import * as directives from 'vuetify/directives'
+// Light theme
+const lightTheme = {
+  dark: false,
+  colors: {
+    primary: '#002D72', // Navy
+    secondary: '#FF7900', // Orange
+    accent: '#8C9EFF',
+    success: '#28a745',
+    warning: '#ffc107',
+    error: '#dc3545',
+    background: '#F5F7FA',
+    surface: '#FFFFFF',
+    'primary-darken-1': '#001D4D',
+    'secondary-darken-1': '#CC6100',
+    'surface-variant': '#F2F4F7',
+    'on-surface-variant': '#1F2937',
+  },
 }
 
-const darkThemeColors = {
-  primary: '#7986CB',
-  'primary-darken-1': '#5C6BC0',
-  secondary: '#4DB6AC',
-  'secondary-darken-1': '#26A69A',
-  accent: '#FFCA28',
-  error: '#CF6679',
-  info: '#64B5F6',
-  success: '#81C784',
-  warning: '#FFB74D',
-  userMessageBg: '#1E295A',
-  agentMessageBg: '#1B3E1E',
+// Dark theme
+const darkTheme = {
+  dark: true,
+  colors: {
+    primary: '#3B82F6',
+    secondary: '#F97316',
+    accent: '#93C5FD',
+    success: '#34D399',
+    warning: '#FBBF24',
+    error: '#EF4444',
+    background: '#111827',
+    surface: '#1F2937',
+    'primary-darken-1': '#2563EB',
+    'secondary-darken-1': '#EA580C',
+    'surface-variant': '#374151',
+    'on-surface-variant': '#E5E7EB',
+  },
 }
 
-// https://vuetifyjs.com/en/introduction/why-vuetify/#feature-guides
-export default createVuetify({
+export const vuetify = createVuetify({
+  components,
+  directives,
   theme: {
-    defaultTheme: 'dark',
+    defaultTheme: 'lightTheme',
     themes: {
-      light: {
-        dark: false,
-        colors: lightThemeColors,
-      },
-      dark: {
-        dark: true,
-        colors: darkThemeColors,
-      },
+      lightTheme,
+      darkTheme,
     },
   },
 })
