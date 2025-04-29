@@ -1,120 +1,3 @@
-<template>
-  <v-container>
-    <v-card class="mx-auto" elevation="2" max-width="800">
-      <v-card-title class="d-flex align-center rounded-top">
-        <v-icon class="mr-2" color="primary">mdi-chat</v-icon>
-        Agent Chat (Hybrid: Fetch Text + WS Audio)
-      </v-card-title>
-
-      <v-card-text>
-        <v-alert
-          v-if="fetchError"
-          class="mb-3"
-          closable
-          density="compact"
-          type="error"
-          variant="tonal"
-        >
-          Error: {{ fetchError }}
-        </v-alert>
-        <v-alert
-          v-if="wsError"
-          class="mb-3"
-          closable
-          density="compact"
-          type="error"
-          variant="tonal"
-        >
-          Audio Connection Error: {{ wsError }}
-        </v-alert>
-        <v-alert
-          v-if="recorderError"
-          class="mb-3"
-          closable
-          density="compact"
-          type="warning"
-          variant="tonal"
-        >
-          Recorder Error: {{ recorderError }}
-        </v-alert>
-        <v-alert
-          v-if="playerError"
-          class="mb-3"
-          closable
-          density="compact"
-          type="warning"
-          variant="tonal"
-        >
-          Player Error: {{ playerError }}
-        </v-alert>
-
-        <div ref="messagesDiv" class="chat-messages">
-          <div
-            v-for="msg in messages"
-            :key="msg.id"
-            :class="['message', getMessageClass(msg.sender)]"
-          >
-            <div class="message-container">
-              <div v-if="msg.sender !== 'System'" :class="['message-avatar', 'mr-3', getAvatarClass(msg.sender)]">
-                <span>{{ msg.sender.charAt(0).toUpperCase() }}</span>
-              </div>
-              <div class="message-content">
-                <div v-if="msg.sender !== 'System' && msg.sender !== 'You'" class="message-sender text-subtitle-2 font-weight-medium">
-                  {{ msg.sender }}
-                </div>
-                <div
-                  v-if="msg.sender === agentName && !msg.isAudioPlaceholder"
-                  class="message-text"
-                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
-                  v-html="parseMarkdown(msg.text)"
-                />
-                <div
-                  v-else
-                  class="message-text"
-                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
-                >
-                  {{ msg.text }}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </v-card-text>
-
-      <v-card-actions class="pa-4">
-        <v-form class="d-flex w-100 align-items-baseline" @submit.prevent="handleSubmit">
-          <v-text-field
-            ref="messageInput"
-            v-model="currentMessage"
-            append-inner-icon="mdi-send"
-            class="mr-2"
-            density="comfortable"
-            :disabled="isSending || isConnectingWs"
-            hide-details
-            label="Message"
-            variant="outlined"
-            @click:append-inner="handleSubmit"
-            @keydown.enter="handleSubmit"
-          />
-
-          <v-btn
-            class="mr-2"
-            :color="isRecording ? 'error' : 'secondary'"
-            :disabled="isSending"
-            icon
-            :loading="isConnectingWs"
-            :title="isRecording ? 'Stop Recording' : 'Start Recording'"
-            @click="toggleRecording"
-          >
-            <v-icon>{{ isRecording ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
-          </v-btn>
-
-        </v-form>
-      </v-card-actions>
-    </v-card>
-  </v-container>
-</template>
-
 <script lang="ts" setup>
   import { nextTick, onMounted, onUnmounted, ref, watch } from 'vue';
   import { marked } from 'marked';
@@ -182,6 +65,8 @@
     connect: connectWebSocket,
     sendAudioChunk,
     disconnect,
+    isInterrupted,
+    resetInterruptFlag,
   } = useWebSocket(wsUrl.value || '');
 
   const {
@@ -195,6 +80,7 @@
     error: playerErrorComposable, // Rename
     addAudioChunk: playReceivedAudioChunk,
     cleanup: cleanupPlayer,
+    stopPlayback,
   } = useAudioPlayer();
 
   // --- Watchers for Errors from Composables ---
@@ -490,7 +376,13 @@
 
     }
   });
-
+  watch(isInterrupted, interrupted => {
+    if (interrupted) {
+      console.log('Interrupt signal received in Chat.vue, stopping playback.');
+      stopPlayback();
+      resetInterruptFlag();
+    }
+  });
   watch(wsError, newError => { // Watch the local wsError ref
     if (newError && isRecording.value) { // Check if recording when error occurs
       console.error('WebSocket error during recording:', newError);
@@ -502,11 +394,156 @@
   });
 
 </script>
+<template>
+  <v-container class="chat-container pa-6" fluid>
+    <v-card class="mx-auto chat-card" elevation="2" max-width="800">
+      <v-card-title class="d-flex align-center rounded-top chat-header">
+        <v-icon class="mr-2" color="primary">mdi-chat</v-icon>
+        Agent Chat (Hybrid: Fetch Text + WS Audio)
+      </v-card-title>
 
+      <v-card-text>
+        <v-alert
+          v-if="fetchError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="error"
+          variant="tonal"
+        >
+          Error: {{ fetchError }}
+        </v-alert>
+        <v-alert
+          v-if="wsError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="error"
+          variant="tonal"
+        >
+          Audio Connection Error: {{ wsError }}
+        </v-alert>
+        <v-alert
+          v-if="recorderError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="warning"
+          variant="tonal"
+        >
+          Recorder Error: {{ recorderError }}
+        </v-alert>
+        <v-alert
+          v-if="playerError"
+          class="mb-3"
+          closable
+          density="compact"
+          type="warning"
+          variant="tonal"
+        >
+          Player Error: {{ playerError }}
+        </v-alert>
+
+        <div ref="messagesDiv" class="chat-messages">
+          <div
+            v-for="msg in messages"
+            :key="msg.id"
+            :class="['message', getMessageClass(msg.sender)]"
+          >
+            <div class="message-container">
+              <div v-if="msg.sender !== 'System'" :class="['message-avatar', 'mr-3', getAvatarClass(msg.sender)]">
+                <span>{{ msg.sender.charAt(0).toUpperCase() }}</span>
+              </div>
+              <div class="message-content">
+                <div v-if="msg.sender !== 'System' && msg.sender !== 'You'" class="message-sender text-subtitle-2 font-weight-medium">
+                  {{ msg.sender }}
+                </div>
+                <div
+                  v-if="msg.sender === agentName && !msg.isAudioPlaceholder"
+                  class="message-text"
+                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
+                  v-html="parseMarkdown(msg.text)"
+                />
+                <div
+                  v-else
+                  class="message-text"
+                  :class="{ 'font-italic': msg.isAudioPlaceholder }"
+                >
+                  {{ msg.text }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </v-card-text>
+
+      <v-card-actions class="chat-input-area  pa-4">
+        <v-form class="d-flex w-100 align-items-baseline" @submit.prevent="handleSubmit">
+          <v-text-field
+            ref="messageInput"
+            v-model="currentMessage"
+            append-inner-icon="mdi-send"
+            class="mr-2"
+            density="comfortable"
+            :disabled="isSending || isConnectingWs"
+            hide-details
+            label="Message"
+            variant="outlined"
+            @click:append-inner="handleSubmit"
+            @keydown.enter="handleSubmit"
+          />
+
+          <v-btn
+            class="mr-2"
+            :color="isRecording ? 'error' : 'secondary'"
+            :disabled="isSending"
+            icon
+            :loading="isConnectingWs"
+            :title="isRecording ? 'Stop Recording' : 'Start Recording'"
+            @click="toggleRecording"
+          >
+            <v-icon>{{ isRecording ? 'mdi-microphone-off' : 'mdi-microphone' }}</v-icon>
+          </v-btn>
+
+        </v-form>
+      </v-card-actions>
+    </v-card>
+  </v-container>
+</template>
 <style scoped lang="scss">
+.chat-container {
+  height: 100%; /* 占满父容器高度 */
+  width: 100%;
+  display: flex;
+  align-items: stretch; /* 拉伸填满空间 */
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+}
+.chat-header {
+  flex-shrink: 0; /* 防止头部压缩 */
+  padding: 16px 20px;
+  background-color: rgba(var(--v-theme-primary), 0.35);
+  border-bottom: 1px solid rgba(var(--v-theme-on-surface), 0.48);
+}
+.chat-card {
+  flex: 1; /* 填满容器 */
+  display: flex;
+  flex-direction: column;
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden; /* 防止卡片内容溢出 */
+}
+
+.chat-input-area {
+  flex-shrink: 0; /* 防止输入区域压缩 */
+  background-color: rgba(var(--v-theme-surface-variant), 0.4);
+  border-top: 1px solid rgba(var(--v-theme-on-surface), 0.08);
+}
   /* Use theme variables for background and text color */
   .chat-messages {
-    height: 400px; /* Or use calc(100vh - Xpx) for better responsiveness */
+    height: calc(100vh - 420px); /* Or use calc(100vh - Xpx) for better responsiveness */
     overflow-y: auto;
     padding: 16px;
     background-color: rgb(var(--v-theme-surface)); /* Use surface color */
