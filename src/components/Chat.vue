@@ -182,6 +182,8 @@
     connect: connectWebSocket,
     sendAudioChunk,
     disconnect,
+    isInterrupted,
+    resetInterruptFlag,
   } = useWebSocket(wsUrl.value || '');
 
   const {
@@ -195,6 +197,7 @@
     error: playerErrorComposable, // Rename
     addAudioChunk: playReceivedAudioChunk,
     cleanup: cleanupPlayer,
+    stopPlayback,
   } = useAudioPlayer();
 
   // --- Watchers for Errors from Composables ---
@@ -490,7 +493,13 @@
 
     }
   });
-
+  watch(isInterrupted, interrupted => {
+    if (interrupted) {
+      console.log('Interrupt signal received in Chat.vue, stopping playback.');
+      stopPlayback();
+      resetInterruptFlag();
+    }
+  });
   watch(wsError, newError => { // Watch the local wsError ref
     if (newError && isRecording.value) { // Check if recording when error occurs
       console.error('WebSocket error during recording:', newError);

@@ -1,18 +1,18 @@
 // src/composables/useAudioPlayer.ts
 import { ref, type Ref } from 'vue';
-import { base64ToUint8Array } from '@/utils/helpers'; // Import the helper
-import type { ReceivedAudio } from '@/types/chat'; // Adjust path if needed
+import { base64ToUint8Array } from '@/utils/helpers';
+import type { ReceivedAudio } from '@/types/chat';
 
 export function useAudioPlayer () {
-  const isPlaying: Ref<boolean> = ref(false); // Indicates if audio is currently playing
+  const isPlaying: Ref<boolean> = ref(false);
   const error: Ref<string | null> = ref(null);
 
   const audioContext: Ref<AudioContext | null> = ref(null);
-  const audioQueue: Ref<{ buffer: ArrayBuffer, rate: number }[]> = ref([]); // Store rate with buffer
+  const audioQueue: Ref<{ buffer: ArrayBuffer, rate: number }[]> = ref([]);
   const lastAudioTime: Ref<number> = ref(0);
   const isProcessingQueue: Ref<boolean> = ref(false);
   const currentPlaybackRate: Ref<number | null> = ref(null);
-
+  const currentSourceNode: Ref<AudioBufferSourceNode | null> = ref(null);
   const ensureAudioContext = async (sampleRate: number): Promise<AudioContext | null> => {
     if (audioContext.value && audioContext.value.state !== 'closed' && currentPlaybackRate.value === sampleRate) {
       // Reuse existing context if rate matches and it's usable
@@ -94,6 +94,7 @@ export function useAudioPlayer () {
         audioQueue.value = []; // Clear queue if context fails
         isProcessingQueue.value = false;
         isPlaying.value = false;
+        currentSourceNode.value = null; // Clear tracked node
         return; // Stop processing
       }
 
@@ -117,6 +118,7 @@ export function useAudioPlayer () {
         const source = context.createBufferSource();
         source.buffer = audioBuffer;
         source.connect(context.destination); // Connect directly for now
+        currentSourceNode.value = source; // <-- Track the new source
 
         const currentTime = context.currentTime;
         if (lastAudioTime.value < currentTime - 0.5) {
@@ -124,35 +126,37 @@ export function useAudioPlayer () {
           lastAudioTime.value = currentTime;
         }
         const startTime = Math.max(currentTime, lastAudioTime.value);
-
         source.start(startTime);
-        // console.log(`Scheduled audio buffer (Rate: ${sampleRate}) to start at: ${startTime.toFixed(3)}s`);
         lastAudioTime.value = startTime + audioBuffer.duration;
 
-        source.onended = () => {
-          // Check if queue is empty AND this was the last source scheduled to end
-          // Need to compare against lastAudioTime as currentTime might be slightly off
-          if (audioQueue.value.length === 0 && context.currentTime >= lastAudioTime.value - 0.1) { // 100ms buffer
-            isPlaying.value = false;
-            console.log('Playback queue finished.');
-          }
-        };
+        await new Promise<void>(resolve => {
+          source.onended = () => {
+            if (currentSourceNode.value === source) { // Only clear if it's the *current* node ending
+              currentSourceNode.value = null;
+            }
+            resolve(); // Resolve the promise when this chunk ends
+          };
+        });
 
       } catch (e) {
         console.error('Error decoding or playing audio buffer:', e);
         error.value = `Playback error: ${e instanceof Error ? e.message : String(e)}`;
+        currentSourceNode.value = null; // Clear on error
+
       }
       // Yield briefly
       await new Promise(resolve => setTimeout(resolve, 0));
     }
 
     isProcessingQueue.value = false;
-    // isPlaying state is handled by the last buffer's onended event
-  };
+    if (audioQueue.value.length === 0 && !currentSourceNode.value) {
+      isPlaying.value = false;
+      console.log('Playback queue finished processing.');
+    } };
 
   /** Cleans up the AudioContext */
   const cleanup = () => {
-    // ...(cleanup logic as before, closing audioContext.value)...
+    stopPlayback();
     if (audioContext.value && audioContext.value.state !== 'closed') {
       audioContext.value.close()
         .then(() => console.log('Playback AudioContext closed.'))
@@ -165,10 +169,34 @@ export function useAudioPlayer () {
     currentPlaybackRate.value = null;
   };
 
+  /** Stop Current playback */
+
+  const stopPlayback = () => {
+    console.log('Stopping playback explicitly.');
+    audioQueue.value = []; // Clear any pending audio chunks
+
+    if (currentSourceNode.value) {
+      try {
+        console.log('Attempting to stop currently playing source node.');
+        currentSourceNode.value.stop(); // Stop the currently playing sound
+        currentSourceNode.value.disconnect(); // Disconnect it
+      } catch (e) {
+        // Ignore errors if stop() is called after node already finished
+        if (!(e instanceof DOMException && e.name === 'InvalidStateError')) {
+          console.warn('Error stopping source node:', e);
+        }
+      }
+      currentSourceNode.value = null; // Clear tracked node
+    }
+
+    isProcessingQueue.value = false; // Ensure processing loop stops
+    isPlaying.value = false; // Update playback status
+  };
   return {
     isPlaying,
     error,
-    addAudioChunk, // Renamed for clarity, accepts { data, rate }
+    addAudioChunk,
+    stopPlayback,
     cleanup,
   };
 }
