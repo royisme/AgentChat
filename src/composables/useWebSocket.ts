@@ -8,6 +8,7 @@ export function useWebSocket (url: string) {
   const messages: Ref<ChatMessage[]> = ref([]);
   const currentAgentMessageId: Ref<string | null> = ref(null);
   const error: Ref<string | null> = ref(null);
+  const isInterrupted: Ref<boolean> = ref(false);
 
   const reconnectTimeout: Ref<ReturnType<typeof setTimeout> | null> = ref(null);
   const receivedAudio: Ref<ReceivedAudio | null> = ref(null);
@@ -48,11 +49,12 @@ export function useWebSocket (url: string) {
           // Don't return yet, turn_complete might accompany final content
         }
         if (packet.interrupted) {
-          currentAgentMessageId.value = null;
+          console.log('[TURN INTERRUPTED]');
+          isInterrupted.value = true; // <-- Set the interrupt flag
+          currentAgentMessageId.value = null; // Reset agent message tracking
           messages.value.push({ id: Date.now().toString(),
             sender: 'system',
-            text: '[Agent Interrupted]', type: 'system' });
-          console.log('[INTERRUPTED]');
+            text: '[Agent Interrupted - Playback Stopped]', type: 'system' });
           // Don't return yet
         }
 
@@ -98,7 +100,7 @@ export function useWebSocket (url: string) {
         }
 
         // If turn completed without content, reset ID
-        if (packet.turn_complete && !packet.content) {
+        if ((packet.turn_complete && !packet.content) || packet.interrupted) {
           currentAgentMessageId.value = null;
         }
 
@@ -162,10 +164,7 @@ export function useWebSocket (url: string) {
         //    Verify the exact structure ADK expects!
         const payload = JSON.stringify({
           blob: {
-            // We assume the data is PCM from our float32ToPCM helper
             mime_type: 'audio/pcm',
-            // You could potentially pass the exact sample rate if needed,
-            // e.g., "audio/pcm;rate=22000", but let's stick to basic PCM for now
             data: base64String,
           }, // Add other metadata if required by ADK
         });
@@ -196,7 +195,9 @@ export function useWebSocket (url: string) {
       ws.value.close(1000, 'Client disconnected'); // Send a normal closure code
     }
   };
-
+  const resetInterruptFlag = (): void => { // <-- Add reset function
+    isInterrupted.value = false;
+  };
   // Return reactive state and methods
   return {
     isConnected,
@@ -207,5 +208,7 @@ export function useWebSocket (url: string) {
     sendAudioChunk,
     receivedAudio,
     disconnect,
+    isInterrupted,
+    resetInterruptFlag,
   };
 }
