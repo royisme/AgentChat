@@ -50,6 +50,7 @@
   import * as firebaseui from 'firebaseui';
   import 'firebaseui/dist/firebaseui.css';
   import { GoogleAuthProvider } from 'firebase/auth';
+  import type { UserCredential } from 'firebase/auth';
   import { authService } from '@/services/authService';
   import 'firebaseui/dist/firebaseui.css';
 
@@ -72,7 +73,7 @@
         GoogleAuthProvider.PROVIDER_ID,
       ],
       callbacks: {
-        signInSuccessWithAuthResult (authResult) {
+        signInSuccessWithAuthResult (authResult: UserCredential) {
           isLoading.value = true; // Indicate backend processing
           error.value = null;
 
@@ -90,11 +91,10 @@
                 } else {
                   throw new Error(backendResponse.message || 'Backend login failed.');
                 }
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error('Backend Login Error:', err);
-                error.value = err.message || 'Login with backend failed.';
+                error.value = err instanceof Error ? err.message : 'Login with backend failed.';
                 isLoading.value = false;
-
               }
             })
             .catch(tokenError => {
@@ -106,7 +106,7 @@
         },
         uiShown: () => {
         },
-        signInFailure (uiError) {
+        signInFailure (uiError: firebaseui.auth.AuthUIError) {
           console.error('FirebaseUI Error:', uiError);
           if (!error.value) {
             error.value = uiError.message || 'Sign in failed. Please try again.';
