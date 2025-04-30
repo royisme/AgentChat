@@ -16,7 +16,7 @@ const router = createRouter({
 })
 
 // 添加全局前置守卫
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   if (!authStore.appToken) {
     authStore.initializeAuth()
@@ -36,24 +36,30 @@ router.beforeEach((to, from, next) => {
 
   if (requiresAuth && !authStore.isAuthenticated) {
 
-    /*
-    //If the token is expired, try refreshing it silently before redirecting
-    if (authStore.isInternalTokenExpired && authStore.internalRefreshToken) {
-        authStore.refreshInternalToken().then(success => {
-            if (success) {
-                next(); // Allow navigation if refresh succeeded
-            } else {
-                next('/auth/login'); // Redirect if refresh failed
-            }
-        });
-    } else {
-        next('/auth/login'); // Redirect if not authenticated or no refresh token
+    if (authStore.isInternalTokenExpired) {
+      console.log('路由守卫: 内部token已过期，尝试刷新...');
+      const refreshed = await authStore.refreshInternalToken();
+      if (refreshed) {
+        // 刷新成功，继续导航
+        return next();
+      } else {
+        // 刷新失败，重定向到登录页
+        console.log('路由守卫: token刷新失败，重定向到登录页');
+        return next('/auth/login');
+      }
     }
-    */
     next('/auth/login')
   } else {
     next()
   }
+  // 处理已登录用户访问登录/注册页的情况
+  if (to.path.startsWith('/auth/login') && authStore.isAuthenticated) {
+    console.log('路由守卫: 已登录用户尝试访问登录页，重定向到仪表盘');
+    return next('/chat');
+  }
+
+  // 对于不需要认证的路由，直接通过
+  return next();
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

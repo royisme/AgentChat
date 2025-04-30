@@ -18,14 +18,31 @@ export const useAuthStore = defineStore('auth', () => {
   const firebaseUser = ref<FirebaseUser | null>(null); // Track Firebase user state
   let unsubscribeAuthStateListener: (() => void) | null = null; // To clean up listener
 
-  // Getters - Based on YOUR internal token
   const isAuthenticated = computed(() => !!appToken.value && !isInternalTokenExpired.value);
+  /*
+    * Checks if the internal token is expired.
+    * @returns {boolean} - True if the token is expired, false otherwise.
+    */
   const isInternalTokenExpired = computed(() => {
     if (!appTokenExpiresAt.value) return true;
     return Date.now() >= appTokenExpiresAt.value;
   });
+  /*
+    * Checks if the token is expiring soon (within 5 minutes).
+    * @returns {boolean} - True if the token is expiring soon, false otherwise.
+    */
+  const isTokenExpiringSoon = computed(() => {
+    if (!appTokenExpiresAt.value) return false;
+    // 计算距离过期还有多少毫秒
+    const timeToExpiry = appTokenExpiresAt.value - Date.now();
+    // 如果小于5分钟(300000毫秒)，则视为即将过期
+    return timeToExpiry > 0 && timeToExpiry < 300000;
+  });
 
-  // Actions
+  /*
+    * Sets the user data and stores it in localStorage.
+    * @param {User | null} mappedUserData - The user data to set.
+    */
   function setUserData (mappedUserData: User | null) {
     user.value = mappedUserData;
     if (mappedUserData) {
@@ -34,7 +51,10 @@ export const useAuthStore = defineStore('auth', () => {
       localStorage.removeItem(USER_KEY);
     }
   }
-
+  /*
+    * Sets the internal token and stores it in localStorage.
+    * @param {string | null} tokenValue - The token value to set.
+    */
   function setInternalToken (tokenValue: string | null) {
     appToken.value = tokenValue;
     if (tokenValue) {
@@ -56,7 +76,10 @@ export const useAuthStore = defineStore('auth', () => {
       appTokenExpiresAt.value = null;
     }
   }
-
+  /*
+    * Sets the internal refresh token and stores it in localStorage.
+    * @param {string | null} tokenValue - The refresh token value to set.
+    */
   function setInternalRefreshToken (tokenValue: string | null) {
     appRefreshToken.value = tokenValue;
     if (tokenValue) {
@@ -87,14 +110,20 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Clears only YOUR internal session data
+  /*
+  * Clears all authentication data from localStorage and state.
+  */
   function clearAuthData () {
     setInternalToken(null);
     setInternalRefreshToken(null);
     setUserData(null);
   }
 
-  // Action to refresh YOUR internal token using your backend
+  /*
+    * Refreshes the internal token using the refresh token.
+    * @returns {Promise<boolean>} - True if the token was refreshed successfully, false otherwise.
+    *
+  */
   async function refreshInternalToken () {
     if (!appRefreshToken.value) {
       clearAuthData();
@@ -115,7 +144,25 @@ export const useAuthStore = defineStore('auth', () => {
       return false;
     }
   }
-
+  /*
+    * Verifies the internal token with the backend.
+    * @returns {Promise<boolean>} - True if the token is valid, false otherwise.
+    *
+    */
+  async function verifyToken (): Promise<boolean> {
+    try {
+      const token = appToken.value;
+      if (!token) {
+        console.warn('No token available for verification.');
+        return false;
+      }
+      const isValid = await authService.verifyToken(token);
+      return isValid;
+    } catch (error) {
+      console.error('Error verifying token:', error);
+      return false;
+    }
+  } 
   function initializeAuth () {
     if (!unsubscribeAuthStateListener) {
       unsubscribeAuthStateListener = onAuthStateChanged(auth, async fbUser => {
@@ -162,17 +209,23 @@ export const useAuthStore = defineStore('auth', () => {
     // Getters
     isAuthenticated,
     isInternalTokenExpired,
-
+    isTokenExpiringSoon,
     // Actions
     login,
     logout,
     refreshInternalToken,
     initializeAuth,
     clearAuthData,
+    verifyToken,
   };
 });
 
-function mapRawUserToUser(rawUserData: any): User | null {
+/*
+  * Maps raw user data from the API to the User interface.
+  * @param {any} rawUserData - The raw user data from the API.
+  * @returns {User | null} - The mapped user data or null if invalid.
+  */
+function mapRawUserToUser (rawUserData: any): User | null {
   if (!rawUserData || !rawUserData.id) {
     // Basic validation: return null if essential data is missing
     return null;
