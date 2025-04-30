@@ -169,8 +169,14 @@
       }
 
       const data = await response.json() as FetchChatResponse[];
+      console.log('API response:', data); // Debugging line
+
       if (data.length > 0 && data[0].content?.parts?.length > 0) {
-        addMessage(agentName, data[0].content.parts[0].text);
+        data.forEach(item => {
+          if (item.content?.role === 'model' && item.content.parts?.[0]?.text) {
+            addMessage(agentName, item.content.parts[0].text);
+          }
+        });
       }
     } catch (error: any) {
       console.error('Error sending query:', error);
