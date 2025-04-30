@@ -19,6 +19,7 @@ import { auth } from '@/plugins/firebase'; // Import auth
 import { onAuthStateChanged } from 'firebase/auth';
 // Styles
 import './styles/main.scss'
+import { setupInterceptors } from '@/services/apiService'; // Import interceptor setup
 const app = createApp(App)
 
 let isAuthReady = false;
@@ -44,3 +45,13 @@ setTimeout(() => {
     // unsubscribe(); // Maybe unsubscribe here on timeout
   }
 }, 5000);
+
+
+setupInterceptors();
+
+// 可选: 添加全局错误处理
+app.config.errorHandler = (err, vm, info) => {
+  console.error('全局错误:', err);
+  console.error('错误信息:', info);
+  // 可以在这里添加错误跟踪逻辑，如Sentry等
+};

@@ -9,40 +9,40 @@
               color="secondary"
               size="large"
             >
-              JACHacks 2025 Project
+              Smart Insurance Consultation
             </v-chip>
           </div>
           <h1 class="text-h2 font-weight-bold mb-4">
-            Your Universal AI Agent Hub
+            Your Personal Insurance AI Advisor
           </h1>
           <p class="text-h6 mb-6" :class="themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1'">
-            Connect and interact with multiple AI agents through a single, unified interface. Built during JACHacks 2025, where 200 students came together to innovate and create impactful solutions.
+            Get instant, personalized insurance quotes and expert advice. Our AI assistant helps you understand your coverage options and find the best insurance solutions for your needs.
           </p>
           <v-btn
             class="text-none"
             color="secondary"
             size="x-large"
-            @click="router.push('/chat')"
+            @click="router.push('/login')"
           >
-            Experience the Future
+            Get Your Quote Now
           </v-btn>
         </v-col>
 
         <v-col class="text-center" cols="12" md="6">
           <v-img
-            alt="AI Agent Hub"
+            alt="Insurance Consultation"
             class="rounded-lg"
             max-height="400"
-            src="https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg"
+            src="https://images.pexels.com/photos/7876708/pexels-photo-7876708.jpeg"
           />
         </v-col>
       </v-row>
 
       <v-row class="features-section my-16">
         <v-col class="text-center mb-12" cols="12">
-          <h2 class="text-h3 font-weight-bold mb-3">Seamless AI Integration</h2>
+          <h2 class="text-h3 font-weight-bold mb-3">Comprehensive Insurance Solutions</h2>
           <p class="text-h6" :class="themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1'">
-            Connect with multiple AI agents through a single, powerful interface
+            Expert guidance for all your insurance needs, powered by advanced AI
           </p>
         </v-col>
 
@@ -52,13 +52,13 @@
               <template #prepend>
                 <v-icon
                   color="primary"
-                  icon="mdi-connection"
+                  icon="mdi-car-insurance"
                   size="x-large"
                 />
               </template>
-              <v-card-title class="text-h5">Multi-Agent Support</v-card-title>
+              <v-card-title class="text-h5">Auto Insurance</v-card-title>
               <v-card-text>
-                Connect with various specialized AI agents for different tasks and domains through a unified interface.
+                Get instant quotes for comprehensive, collision, and liability coverage. Compare options from top insurers.
               </v-card-text>
             </v-card-item>
           </v-card>
@@ -70,13 +70,13 @@
               <template #prepend>
                 <v-icon
                   color="primary"
-                  icon="mdi-sync"
+                  icon="mdi-home-insurance"
                   size="x-large"
                 />
               </template>
-              <v-card-title class="text-h5">Seamless Integration</v-card-title>
+              <v-card-title class="text-h5">Home Insurance</v-card-title>
               <v-card-text>
-                Effortlessly switch between different AI agents while maintaining context and conversation history.
+                Protect your home with customized coverage for property damage, liability, and personal belongings.
               </v-card-text>
             </v-card-item>
           </v-card>
@@ -92,20 +92,20 @@
                   size="x-large"
                 />
               </template>
-              <v-card-title class="text-h5">Secure & Private</v-card-title>
+              <v-card-title class="text-h5">Life Insurance</v-card-title>
               <v-card-text>
-                Your conversations and data are protected with enterprise-grade security and privacy measures.
+                Secure your family's future with term life, whole life, and universal life insurance options.
               </v-card-text>
             </v-card-item>
           </v-card>
         </v-col>
       </v-row>
 
-      <v-row align="center" class="hackathon-section my-16 py-16" justify="center">
+      <v-row align="center" class="benefits-section my-16 py-16" justify="center">
         <v-col class="text-center mb-8" cols="12">
-          <h2 class="text-h3 font-weight-bold mb-3">Built at JACHacks 2025</h2>
+          <h2 class="text-h3 font-weight-bold mb-3">Why Choose Our AI Assistant?</h2>
           <p class="text-h6" :class="themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1'">
-            John Abbott College's premier hackathon bringing together 200 students for innovation and collaboration
+            Experience the future of insurance consultation with our advanced AI technology
           </p>
         </v-col>
 
@@ -116,8 +116,8 @@
               size="small"
             >
               <div class="text-left">
-                <h3 class="text-h6 mb-2">Innovation Challenge</h3>
-                <p>One of 200 projects developed during the intensive hackathon weekend</p>
+                <h3 class="text-h6 mb-2">Instant Quotes</h3>
+                <p>Get accurate insurance quotes in seconds, tailored to your specific needs</p>
               </div>
             </v-timeline-item>
 
@@ -126,8 +126,8 @@
               size="small"
             >
               <div class="text-left">
-                <h3 class="text-h6 mb-2">Technical Achievement</h3>
-                <p>Built using cutting-edge technologies and AI integration capabilities</p>
+                <h3 class="text-h6 mb-2">Expert Guidance</h3>
+                <p>Receive personalized advice on coverage options and policy features</p>
               </div>
             </v-timeline-item>
 
@@ -136,8 +136,8 @@
               size="small"
             >
               <div class="text-left">
-                <h3 class="text-h6 mb-2">Future Development</h3>
-                <p>Continuing to evolve with new features and agent integrations</p>
+                <h3 class="text-h6 mb-2">24/7 Availability</h3>
+                <p>Access insurance information and support whenever you need it</p>
               </div>
             </v-timeline-item>
           </v-timeline>
@@ -146,17 +146,17 @@
 
       <v-row align="center" class="cta-section my-16" justify="center">
         <v-col class="text-center" cols="12" md="8">
-          <h2 class="text-h3 font-weight-bold mb-3">Experience the Future of AI Interaction</h2>
+          <h2 class="text-h3 font-weight-bold mb-3">Ready to Find Your Perfect Coverage?</h2>
           <p class="text-h6 mb-6" :class="themeStore.isDark ? 'text-grey-lighten-1' : 'text-grey-darken-1'">
-            Join us in revolutionizing how people interact with AI agents
+            Get started with our AI insurance assistant and find the right coverage for your needs
           </p>
           <v-btn
             class="text-none"
             color="secondary"
             size="x-large"
-            @click="router.push('/chat')"
+            @click="router.push('/login')"
           >
-            Start Now
+            Get Your Quote
           </v-btn>
         </v-col>
       </v-row>

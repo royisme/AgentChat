@@ -1,45 +1,49 @@
-import axios from 'axios'
 import type { User } from '@/types/auth'
-import type { ApiResponse } from '@/types/api'
+import type { ApiResponse,LoginResponse,RefreshTokenResponse } from '@/types/api'
+import { authApiClient } from '@/services/apiService'
 
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'; // Default added
-const API_AUTH_URL = `${API_BASE_URL}/auth`;
+const API_AUTH_ROUTER_PREFIX = `/auth`;
 
-interface LoginResponse {
-  token: string;
-  refreshToken: string;
-  user: User;
-}
 
 export const authService = {
   // Google OAuth login
   async googleLogin (firebaseIdToken: string): Promise<ApiResponse<LoginResponse>> {
-    const response = await axios.post(`${API_AUTH_URL}/google-login`, { token: firebaseIdToken })
+    const response = await authApiClient.post(`${API_AUTH_ROUTER_PREFIX}/google-login`, { token: firebaseIdToken })
     return response.data
   },
 
   // Refresh token
-  async refreshToken (refreshToken: string): Promise<ApiResponse<{ token: string }>> {
-    const response = await axios.post(`${API_AUTH_URL}/refresh-token`, { refreshToken })
+  async refreshToken (refreshToken: string): Promise<ApiResponse<RefreshTokenResponse>> {
+    const response = await authApiClient.post(`${API_AUTH_ROUTER_PREFIX}/refresh-token`, { refreshToken })
     return response.data
   },
-
+  // Verify token
+  async verifyToken (token: string): Promise<boolean> {
+    const response = await authApiClient.get(`${API_AUTH_ROUTER_PREFIX}/verify-token`, { headers: { Authorization: `Bearer ${token}` } })
+    if (response.status === 204) {
+      // 状态码为 204，表示令牌有效
+      console.log('Token is valid.');
+      return true; // 或者执行其他登录状态有效的逻辑
+    } else {
+      return false; // 令牌无效
+    }
+  },
   // Logout
   async logout (): Promise<ApiResponse<null>> {
-    const response = await axios.post(`${API_AUTH_URL}/logout`)
+    const response = await authApiClient.post(`${API_AUTH_ROUTER_PREFIX}/logout`)
     return response.data
   },
 
   // Get user profile
   async getProfile (): Promise<ApiResponse<User>> {
-    const response = await axios.get(`${API_AUTH_URL}/profile`)
+    const response = await authApiClient.get(`${API_AUTH_ROUTER_PREFIX}/profile`)
     return response.data
   },
 
   // Update user preferences
   async updatePreferences (preferences: any): Promise<ApiResponse<User>> {
-    const response = await axios.put(`${API_AUTH_URL}/preferences`, { preferences })
+    const response = await authApiClient.put(`${API_AUTH_ROUTER_PREFIX}/preferences`, { preferences })
     return response.data
   },
 }
