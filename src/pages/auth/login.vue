@@ -49,9 +49,8 @@
   import { auth } from '@/plugins/firebase';
   import * as firebaseui from 'firebaseui';
   import 'firebaseui/dist/firebaseui.css';
-  import { GoogleAuthProvider } from 'firebase/auth';
+  import { GoogleAuthProvider, type UserCredential } from 'firebase/auth';
   import { authService } from '@/services/authService';
-  import 'firebaseui/dist/firebaseui.css';
 
   const authStore = useAuthStore();
   const themeStore = useThemeStore();
@@ -72,8 +71,8 @@
         GoogleAuthProvider.PROVIDER_ID,
       ],
       callbacks: {
-        signInSuccessWithAuthResult (authResult) {
-          isLoading.value = true; // Indicate backend processing
+        signInSuccessWithAuthResult (authResult: UserCredential) {
+          isLoading.value = true;
           error.value = null;
 
           // Get the Firebase ID token from the AuthResult
@@ -90,11 +89,14 @@
                 } else {
                   throw new Error(backendResponse.message || 'Backend login failed.');
                 }
-              } catch (err: any) {
+              } catch (err: unknown) {
                 console.error('Backend Login Error:', err);
-                error.value = err.message || 'Login with backend failed.';
+                if (err instanceof Error) {
+                  error.value = err.message || 'Login with backend failed.';
+                } else {
+                  error.value = 'An unknown error occurred.';
+                }
                 isLoading.value = false;
-
               }
             })
             .catch(tokenError => {
@@ -106,7 +108,7 @@
         },
         uiShown: () => {
         },
-        signInFailure (uiError) {
+        signInFailure (uiError: firebaseui.auth.AuthUIError) {
           console.error('FirebaseUI Error:', uiError);
           if (!error.value) {
             error.value = uiError.message || 'Sign in failed. Please try again.';
