@@ -30,7 +30,7 @@
       <v-btn class="mr-2" icon @click="router.push('/')">
         <v-icon class="mr-2" icon="mdi-shield" />
 
-        <v-app-bar-title>AI Agent Hub</v-app-bar-title>
+        <v-app-bar-title>Insurance AI Assistant</v-app-bar-title>
       </v-btn>
       <v-spacer />
 

@@ -49,10 +49,8 @@
   import { auth } from '@/plugins/firebase';
   import * as firebaseui from 'firebaseui';
   import 'firebaseui/dist/firebaseui.css';
-  import { GoogleAuthProvider } from 'firebase/auth';
-  import type { UserCredential } from 'firebase/auth';
+  import { GoogleAuthProvider, type UserCredential } from 'firebase/auth';
   import { authService } from '@/services/authService';
-  import 'firebaseui/dist/firebaseui.css';
 
   const authStore = useAuthStore();
   const themeStore = useThemeStore();
@@ -74,7 +72,7 @@
       ],
       callbacks: {
         signInSuccessWithAuthResult (authResult: UserCredential) {
-          isLoading.value = true; // Indicate backend processing
+          isLoading.value = true;
           error.value = null;
 
           // Get the Firebase ID token from the AuthResult
@@ -93,7 +91,11 @@
                 }
               } catch (err: unknown) {
                 console.error('Backend Login Error:', err);
-                error.value = err instanceof Error ? err.message : 'Login with backend failed.';
+                if (err instanceof Error) {
+                  error.value = err.message || 'Login with backend failed.';
+                } else {
+                  error.value = 'An unknown error occurred.';
+                }
                 isLoading.value = false;
               }
             })
