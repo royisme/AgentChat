@@ -90,7 +90,7 @@
                   throw new Error(backendResponse.message || 'Backend login failed.');
                 }
               } catch (err: unknown) {
-                 console.error('Backend Login Error:', err);
+                console.error('Backend Login Error:', err);
                 if (err instanceof Error) {
                   error.value = err.message || 'Login with backend failed.';
                 } else {
