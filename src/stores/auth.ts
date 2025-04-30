@@ -162,7 +162,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.error('Error verifying token:', error);
       return false;
     }
-  } 
+  }
   function initializeAuth () {
     if (!unsubscribeAuthStateListener) {
       unsubscribeAuthStateListener = onAuthStateChanged(auth, async fbUser => {

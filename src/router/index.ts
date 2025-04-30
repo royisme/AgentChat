@@ -58,8 +58,6 @@ router.beforeEach(async (to, from, next) => {
     return next('/chat');
   }
 
-  // 对于不需要认证的路由，直接通过
-  return next();
 })
 
 // Workaround for https://github.com/vitejs/vite/issues/11804

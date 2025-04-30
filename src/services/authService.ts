@@ -20,7 +20,7 @@ export const authService = {
   },
   // Verify token
   async verifyToken (token: string): Promise<boolean> {
-    const response = await authApiClient.post(`${API_AUTH_ROUTER_PREFIX}/verify-token`, { token })
+    const response = await authApiClient.get(`${API_AUTH_ROUTER_PREFIX}/verify-token`, { headers: { Authorization: `Bearer ${token}` } })
     if (response.status === 204) {
       // 状态码为 204，表示令牌有效
       console.log('Token is valid.');
